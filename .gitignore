@@ -3,4 +3,9 @@
 /Spring_Hibernate_web/.mvn/
 /Spring/target/
 /Spring/.mvn/
-/Spring
+/Spring-MVC/target/
+/Spring-MVC/.mvn/
+/Spring-REST-POJO/target/
+/Spring-REST-POJO/.mvn/
+/Spring-security/target/
+/Spring-security/.mvn/
