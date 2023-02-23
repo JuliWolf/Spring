@@ -1,1 +1,6 @@
 /.idea/
+/Spring_Hibernate_web/target/
+/Spring_Hibernate_web/.mvn/
+/Spring/target/
+/Spring/.mvn/
+/Spring
