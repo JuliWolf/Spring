@@ -71,3 +71,11 @@ public class BooksWsAuthenticationEntryPoint extends BasicAuthenticationEntryPoi
 }
 ```
 
+
+```
+SessionCreationPolicy.STATELESS - No session will be created or used.
+SessionCreationPolicy.ALWAYS - A session will always be created if it does not exist.
+SessionCreationPolicy.NEVER - A session will never be created. But if a session exists, it will be used.
+SessionCreationPolicy.IF_REQUIRED - A session will be created if required. (Default Configuration)
+```
+
