@@ -1,15 +1,20 @@
 package com.skb.authorization_books.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
 
   @Autowired
   private UserRepository userRepository;
+
+  @Autowired
+  private AuthoritiesRepository authoritiesRepository;
 
   //  private User user = null;
 
@@ -31,6 +36,13 @@ public class UserService {
   }
 
   private User createUserFromUserEntity(UserEntity userEntity) {
-    return new User(userEntity.getUsername(), userEntity.getPassword(), userEntity.getEnabled());
+    User user = new User(userEntity.getUsername(), userEntity.getPassword(), userEntity.getEnabled());
+    user.setAuthorities(userEntity.getAuthoritiesEntities()
+        .stream()
+        .map(authority -> new SimpleGrantedAuthority(authority.getAuthority()))
+        .collect(Collectors.toSet())
+    );
+
+    return user;
   }
 }

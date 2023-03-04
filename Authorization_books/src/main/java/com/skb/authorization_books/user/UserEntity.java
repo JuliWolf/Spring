@@ -2,6 +2,8 @@ package com.skb.authorization_books.user;
 
 import jakarta.persistence.*;
 
+import java.util.Set;
+
 @Entity
 @Table(name="users")
 public class UserEntity {
@@ -15,6 +17,21 @@ public class UserEntity {
 
   @Column(name="enabled")
   private Boolean enabled;
+
+  @OneToMany(
+      mappedBy = "userEntity",
+      fetch = FetchType.EAGER,
+      cascade = CascadeType.ALL
+  )
+  private Set<AuthoritiesEntity> authoritiesEntities;
+
+  public Set<AuthoritiesEntity> getAuthoritiesEntities() {
+    return authoritiesEntities;
+  }
+
+  public void setAuthoritiesEntities(Set<AuthoritiesEntity> authoritiesEntities) {
+    this.authoritiesEntities = authoritiesEntities;
+  }
 
   public String getUsername() {
     return username;

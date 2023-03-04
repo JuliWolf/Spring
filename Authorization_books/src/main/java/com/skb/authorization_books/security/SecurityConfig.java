@@ -54,6 +54,10 @@ public class SecurityConfig  {
     http.authorizeHttpRequests()
         // Our public endpoints
         .requestMatchers("/api/public/**").permitAll()
+        // User endpoints
+        .requestMatchers("/v1/books/{bookId}").hasAnyAuthority("USER", "ADMIN")
+        // Admin endpoints
+        .requestMatchers("/v1/books").hasAuthority("ADMIN")
         // Our private endpoints
         .anyRequest().authenticated();
 
