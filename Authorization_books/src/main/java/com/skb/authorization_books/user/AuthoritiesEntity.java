@@ -12,19 +12,15 @@ public class AuthoritiesEntity {
   @Column(name = "authority")
   private String authority;
 
-  @ManyToOne(
-      fetch = FetchType.EAGER,
-      cascade = CascadeType.ALL
-  )
-  @JoinColumn(name = "username", nullable = false)
-  private UserEntity userEntity;
+  @Column(name= "role")
+  private String role;
 
-  public UserEntity getUserEntity() {
-    return userEntity;
+  public String getRole() {
+    return role;
   }
 
-  public void setUserEntity(UserEntity userEntity) {
-    this.userEntity = userEntity;
+  public void setRole(String role) {
+    this.role = role;
   }
 
   public Integer getAuthorityId() {
@@ -46,10 +42,10 @@ public class AuthoritiesEntity {
   public AuthoritiesEntity() {
   }
 
-  public AuthoritiesEntity(Integer authorityId, String authority, UserEntity userEntity) {
+  public AuthoritiesEntity(Integer authorityId, String authority, String role) {
     this.authorityId = authorityId;
     this.authority = authority;
-    this.userEntity = userEntity;
+    this.role = role;
   }
 
   @Override
@@ -57,7 +53,7 @@ public class AuthoritiesEntity {
     return "AuthoritiesEntity{" +
         "authorityId=" + authorityId +
         ", authority='" + authority + '\'' +
-        ", userEntity=" + userEntity +
+        ", role='" + role + '\'' +
         '}';
   }
 }

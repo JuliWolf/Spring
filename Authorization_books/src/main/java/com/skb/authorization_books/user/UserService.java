@@ -5,7 +5,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class UserService {
@@ -37,11 +39,34 @@ public class UserService {
 
   private User createUserFromUserEntity(UserEntity userEntity) {
     User user = new User(userEntity.getUsername(), userEntity.getPassword(), userEntity.getEnabled());
-    user.setAuthorities(userEntity.getAuthoritiesEntities()
+//    user.setAuthorities(userEntity.getAuthoritiesEntities()
+//        .stream()
+//        .map(authority -> new SimpleGrantedAuthority(authority.getAuthority()))
+//        .collect(Collectors.toSet())
+//    );
+
+    // Fetch authorities from authorities table
+    Stream<Stream<String>> streamStreamAuths = userEntity.getUserRoles()
         .stream()
-        .map(authority -> new SimpleGrantedAuthority(authority.getAuthority()))
-        .collect(Collectors.toSet())
-    );
+        .map(userRoleEntity -> {
+          Set<AuthoritiesEntity> authoritiesEntities = authoritiesRepository.findByRole(userRoleEntity.getRole());
+          return authoritiesEntities.stream()
+              .map(entity -> entity.getAuthority());
+        });
+
+    // Flatten the stream of streams to get the set of authorities
+    Set<String> authorities = streamStreamAuths.flatMap(authStream -> authStream)
+        .collect(Collectors.toSet());
+
+    // add the Role (from the user_role table) as authorities
+    // because UserDetails does not support adding Role separately as it does not have any setRole
+    userEntity.getUserRoles().stream()
+        .forEach(userRoleEntity -> authorities.add(userRoleEntity.getRole()));
+
+    // Set all authorities for the User
+    user.setAuthorities(authorities.stream()
+        .map(auth -> new SimpleGrantedAuthority(auth))
+        .collect(Collectors.toSet()));
 
     return user;
   }

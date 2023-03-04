@@ -10,9 +10,12 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.expression.WebExpressionAuthorizationManager;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
+
+import static org.springframework.security.authorization.AuthorityAuthorizationManager.hasRole;
 
 @Configuration
 @EnableWebSecurity
@@ -55,9 +58,11 @@ public class SecurityConfig  {
         // Our public endpoints
         .requestMatchers("/api/public/**").permitAll()
         // User endpoints
-        .requestMatchers("/v1/books/{bookId}").hasAnyAuthority("USER", "ADMIN")
+//        .requestMatchers("/v1/books/{bookId}").hasAnyAuthority("USER", "ADMIN")
+        .requestMatchers("/v1/books/{bookId}").access(new WebExpressionAuthorizationManager("hasRole('USER') and hasAuthority('GET_BOOK')"))
         // Admin endpoints
-        .requestMatchers("/v1/books").hasAuthority("ADMIN")
+//        .requestMatchers("/v1/books").hasAuthority("ADMIN")
+        .requestMatchers("/v1/books").access(new WebExpressionAuthorizationManager("hasRole('ADMIN') and hasAuthority('CREATE_BOOK')"))
         // Our private endpoints
         .anyRequest().authenticated();
 
@@ -77,6 +82,8 @@ public class SecurityConfig  {
         .userDetailsService(userDetailsService)
         .passwordEncoder(bCryptPasswordEncoder)
         .and()
+//        .inMemoryAuthentication().withUser("").authorities().roles()
+//        .and()
         .build();
   }
 

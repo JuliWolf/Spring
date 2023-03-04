@@ -23,14 +23,14 @@ public class UserEntity {
       fetch = FetchType.EAGER,
       cascade = CascadeType.ALL
   )
-  private Set<AuthoritiesEntity> authoritiesEntities;
+  private Set<UserRoleEntity> userRoles;
 
-  public Set<AuthoritiesEntity> getAuthoritiesEntities() {
-    return authoritiesEntities;
+  public Set<UserRoleEntity> getUserRoles() {
+    return userRoles;
   }
 
-  public void setAuthoritiesEntities(Set<AuthoritiesEntity> authoritiesEntities) {
-    this.authoritiesEntities = authoritiesEntities;
+  public void setUserRoles(Set<UserRoleEntity> userRoles) {
+    this.userRoles = userRoles;
   }
 
   public String getUsername() {
