@@ -79,3 +79,164 @@ SessionCreationPolicy.NEVER - A session will never be created. But if a session 
 SessionCreationPolicy.IF_REQUIRED - A session will be created if required. (Default Configuration)
 ```
 
+## Настройка прав
+
+1. Необходимо создать таблицу с правами
+```
+CREATE TABLE AUTHORITIES (
+	AUTHORITY_ID INT PRIMARY KEY,	
+    USERNAME VARCHAR(128) NOT NULL,
+    AUTHORITY VARCHAR(128) NOT NULL
+);
+ALTER TABLE AUTHORITIES ADD CONSTRAINT USER_ROLE_UNIQUE UNIQUE (USERNAME, AUTHORITY);
+ALTER TABLE AUTHORITIES ADD CONSTRAINT USER_ROLE_FK1 FOREIGN KEY (USERNAME) REFERENCES USERS (USERNAME);
+```
+
+2. Реализовать класс `AuthoritiesEntity` для связи с базой данных
+```
+package com.skb.authorization_books.user;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "authorities")
+public class AuthoritiesEntity {
+  @Column(name = "authority_id")
+  @Id
+  private Integer authorityId;
+
+  @Column(name = "authority")
+  private String authority;
+
+  @ManyToOne(
+      fetch = FetchType.EAGER,
+      cascade = CascadeType.ALL
+  )
+  @JoinColumn(name = "username", nullable = false)
+  private UserEntity userEntity;
+
+  public UserEntity getUserEntity() {
+    return userEntity;
+  }
+
+  public void setUserEntity(UserEntity userEntity) {
+    this.userEntity = userEntity;
+  }
+
+  public Integer getAuthorityId() {
+    return authorityId;
+  }
+
+  public void setAuthorityId(Integer authorityId) {
+    this.authorityId = authorityId;
+  }
+
+  public String getAuthority() {
+    return authority;
+  }
+
+  public void setAuthority(String authority) {
+    this.authority = authority;
+  }
+
+  public AuthoritiesEntity() {
+  }
+
+  public AuthoritiesEntity(Integer authorityId, String authority, UserEntity userEntity) {
+    this.authorityId = authorityId;
+    this.authority = authority;
+    this.userEntity = userEntity;
+  }
+
+  @Override
+  public String toString() {
+    return "AuthoritiesEntity{" +
+        "authorityId=" + authorityId +
+        ", authority='" + authority + '\'' +
+        ", userEntity=" + userEntity +
+        '}';
+  }
+}
+```
+
+3. В классе `UserEntity` описать связь с таблицей `autorities`
+```
+  @OneToMany(
+      mappedBy = "userEntity",
+      fetch = FetchType.EAGER,
+      cascade = CascadeType.ALL
+  )
+  private Set<AuthoritiesEntity> authoritiesEntities;
+
+  public Set<AuthoritiesEntity> getAuthoritiesEntities() {
+    return authoritiesEntities;
+  }
+
+  public void setAuthoritiesEntities(Set<AuthoritiesEntity> authoritiesEntities) {
+    this.authoritiesEntities = authoritiesEntities;
+  }
+```
+
+4. В класс `User` добавить свойства для хранения списка `authorities`
+```
+  private Set<GrantedAuthority> authorities;
+
+  public void setAuthorities(Set<GrantedAuthority> authorities) {
+    this.authorities = authorities;
+  }
+```
+
+```
+@Override
+  public Collection<? extends GrantedAuthority> getAuthorities() {
+    return authorities;
+  }
+```
+
+5. Реализовать класс `AuthoritiesRepository` для получения списка прав
+```
+package com.skb.authorization_books.user;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface AuthoritiesRepository extends JpaRepository<AuthoritiesEntity, Integer> {
+  UserEntity findByUserEntity (UserEntity userEntity);
+}
+```
+
+6. В файле `SecutiryConfig` добавить проверку прав для эндпоинтов в фильтрах
+```
+  @Bean
+  public SecurityFilterChain filterChain(HttpSecurity http, BooksWsAuthenticationEntryPoint authenticationEntryPoint) throws Exception {
+    // Enable CORS and disable CSRF
+    http = http.cors().and().csrf().disable();
+
+    // Set session management to stateless
+    http = http
+        .sessionManagement()
+        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        .and();
+
+    // Set authentication entry point
+    http = http.httpBasic().authenticationEntryPoint(authenticationEntryPoint).and();
+
+    // Set permissions on endpoints
+    http.authorizeHttpRequests()
+        // Our public endpoints
+        .requestMatchers("/api/public/**").permitAll()
+        // User endpoints
+        .requestMatchers("/v1/books/{bookId}").hasAnyAuthority("USER", "ADMIN")
+        // Admin endpoints
+        .requestMatchers("/v1/books").hasAuthority("ADMIN")
+        // Our private endpoints
+        .anyRequest().authenticated();
+
+    return http.build();
+  }
+```
+
+
+## Связь прав и ролей
+

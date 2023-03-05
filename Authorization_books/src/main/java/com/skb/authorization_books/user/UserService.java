@@ -48,23 +48,31 @@ public class UserService {
     // Fetch authorities from authorities table
     Stream<Stream<String>> streamStreamAuths = userEntity.getUserRoles()
         .stream()
+        // ['ROLE_ADMIN']
         .map(userRoleEntity -> {
+          // ['ADD_BOOK', 'CREATE_BOOK']
           Set<AuthoritiesEntity> authoritiesEntities = authoritiesRepository.findByRole(userRoleEntity.getRole());
           return authoritiesEntities.stream()
               .map(entity -> entity.getAuthority());
         });
 
     // Flatten the stream of streams to get the set of authorities
-    Set<String> authorities = streamStreamAuths.flatMap(authStream -> authStream)
+    // ['ADD_BOOK', 'CREATE_BOOK']
+    Set<String> authorities = streamStreamAuths
+        .flatMap(authStream -> authStream)
         .collect(Collectors.toSet());
 
     // add the Role (from the user_role table) as authorities
     // because UserDetails does not support adding Role separately as it does not have any setRole
-    userEntity.getUserRoles().stream()
+    userEntity.getUserRoles()
+        .stream()
+        // ['ROLE_ADMIN']
+        // authorities = ['ROLE_ADMIN', 'ADD_BOOK', 'CREATE_BOOK']
         .forEach(userRoleEntity -> authorities.add(userRoleEntity.getRole()));
 
     // Set all authorities for the User
-    user.setAuthorities(authorities.stream()
+    user.setAuthorities(authorities
+        .stream()
         .map(auth -> new SimpleGrantedAuthority(auth))
         .collect(Collectors.toSet()));
 
