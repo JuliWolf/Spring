@@ -27,9 +27,13 @@ public class SecurityConfig  {
   }
 
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http, BooksWsAuthenticationEntryPoint authenticationEntryPoint) throws Exception {
+  public SecurityFilterChain filterChain(HttpSecurity http, BooksWsAuthenticationEntryPoint authenticationEntryPoint, JwtRequestFilter jwtRequestFilter) throws Exception {
     // Enable CORS and disable CSRF
     http = http.cors().and().csrf().disable();
+
+    // Set jwt token authentication
+    http = http
+        .addFilter(jwtRequestFilter);
 
     // Set session management to stateless
     http = http
@@ -51,7 +55,8 @@ public class SecurityConfig  {
 //        .and();
 
     // Set authentication entry point
-    http = http.httpBasic().authenticationEntryPoint(authenticationEntryPoint).and();
+//    http = http.httpBasic().authenticationEntryPoint(authenticationEntryPoint).and();
+
 
     // Set permissions on endpoints
     http.authorizeHttpRequests()
@@ -62,9 +67,9 @@ public class SecurityConfig  {
         .requestMatchers("/v1/books/{bookId}").access(new WebExpressionAuthorizationManager("hasRole('USER') and hasAuthority('GET_BOOK')"))
         // Admin endpoints
 //        .requestMatchers("/v1/books").hasAuthority("ADMIN")
-        .requestMatchers("/v1/books").access(new WebExpressionAuthorizationManager("hasRole('ADMIN') and hasAuthority('CREATE_BOOK')"))
+        .requestMatchers("/v1/books").access(new WebExpressionAuthorizationManager("hasRole('ADMIN') and hasAuthority('CREATE_BOOK')"));
         // Our private endpoints
-        .anyRequest().authenticated();
+//        .anyRequest().authenticated();
 
     // Add JWT token filter
 //    http.addFilterBefore(
