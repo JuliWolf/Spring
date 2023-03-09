@@ -1,7 +1,7 @@
 package com.skb.authorization_books.security;
 
 import com.skb.authorization_books.user.User;
-import com.skb.authorization_books.user.UserService;
+import com.skb.authorization_books.service.UserService;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

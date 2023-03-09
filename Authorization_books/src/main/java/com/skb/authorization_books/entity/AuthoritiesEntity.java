@@ -1,4 +1,4 @@
-package com.skb.authorization_books.user;
+package com.skb.authorization_books.entity;
 
 import jakarta.persistence.*;
 

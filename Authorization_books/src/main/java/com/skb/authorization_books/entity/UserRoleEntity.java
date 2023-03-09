@@ -1,5 +1,6 @@
-package com.skb.authorization_books.user;
+package com.skb.authorization_books.entity;
 
+import com.skb.authorization_books.entity.UserEntity;
 import jakarta.persistence.*;
 
 @Entity

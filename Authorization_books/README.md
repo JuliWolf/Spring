@@ -240,3 +240,212 @@ public interface AuthoritiesRepository extends JpaRepository<AuthoritiesEntity, 
 
 ## Связь прав и ролей
 
+1. Необходимо создать таблицу с ролями
+```
+CREATE TABLE ROLES (
+    ROLE VARCHAR(128) NOT NULL PRIMARY KEY
+);
+```
+
+2. Таблица с ролями должна иметь связь с таблицей `users`
+Для этого необходимо создать таблицу `user_roles` которая будет связывать 2 таблицы
+```
+CREATE TABLE USER_ROLE (
+	USER_ROLE_ID INT PRIMARY KEY,	
+    USERNAME VARCHAR(128) NOT NULL,
+    ROLE VARCHAR(128) NOT NULL
+);
+ALTER TABLE USER_ROLE ADD CONSTRAINT USER_ROLE_UNIQUE UNIQUE (USERNAME, ROLE);
+ALTER TABLE USER_ROLE ADD CONSTRAINT USER_ROLE_FK1 FOREIGN KEY (USERNAME) REFERENCES USERS (USERNAME);
+ALTER TABLE USER_ROLE ADD CONSTRAINT USER_ROLE_FK2 FOREIGN KEY (ROLE) REFERENCES ROLES (ROLE);
+```
+
+3. Создать таблицу `authorities` которая будет связана с таблицей `roles`
+```
+CREATE TABLE AUTHORITIES (
+	AUTHORITY_ID INT PRIMARY KEY,
+    ROLE VARCHAR(128) NOT NULL,
+    AUTHORITY VARCHAR(128) NOT NULL
+);
+ALTER TABLE AUTHORITIES ADD CONSTRAINT AUTHORITIES_UNIQUE UNIQUE (ROLE, AUTHORITY);
+ALTER TABLE AUTHORITIES ADD CONSTRAINT AUTHORITIES_FK1 FOREIGN KEY (ROLE) REFERENCES ROLES (ROLE);
+```
+
+4. В классе `UserEntity` добавить свойство `userRoles`
+```
+@OneToMany(
+      mappedBy = "userEntity",
+      fetch = FetchType.EAGER,
+      cascade = CascadeType.ALL
+  )
+  private Set<UserRoleEntity> userRoles;
+```
+
+5. Создать класс `UserRoleEntity`, в которой указать саязь с таблицей `users`
+```
+@Entity
+@Table(name = "user_role")
+public class UserRoleEntity {
+  @Column(name = "user_role_id")
+  @Id
+  private Integer userRoleId;
+
+  @Column(name = "role")
+  private String role;
+
+  @ManyToOne(
+      fetch = FetchType.EAGER,
+      cascade = CascadeType.ALL
+  )
+  @JoinColumn(name = "username", nullable = false)
+  private UserEntity userEntity;
+
+  public Integer getUserRoleId() {
+    return userRoleId;
+  }
+
+  public void setUserRoleId(Integer userRoleId) {
+    this.userRoleId = userRoleId;
+  }
+
+  public String getRole() {
+    return role;
+  }
+
+  public void setRole(String role) {
+    this.role = role;
+  }
+
+  public UserEntity getUserEntity() {
+    return userEntity;
+  }
+
+  public void setUserEntity(UserEntity userEntity) {
+    this.userEntity = userEntity;
+  }
+
+  public UserRoleEntity() {
+  }
+
+  public UserRoleEntity(Integer userRoleId, String role) {
+    this.userRoleId = userRoleId;
+    this.role = role;
+  }
+
+  @Override
+  public String toString() {
+    return "UserRoleEntity{" +
+        "userRoleId=" + userRoleId +
+        ", role='" + role + '\'' +
+        ", userEntity=" + userEntity +
+        '}';
+  }
+}
+```
+
+6. Создать класс `AuthoritiesEntity`, в которой указать саязь с таблицей `roles`
+```
+@Entity
+@Table(name = "authorities")
+public class AuthoritiesEntity {
+  @Column(name = "authority_id")
+  @Id
+  private Integer authorityId;
+
+  @Column(name = "authority")
+  private String authority;
+
+  @Column(name= "role")
+  private String role;
+
+  public String getRole() {
+    return role;
+  }
+
+  public void setRole(String role) {
+    this.role = role;
+  }
+
+  public Integer getAuthorityId() {
+    return authorityId;
+  }
+
+  public void setAuthorityId(Integer authorityId) {
+    this.authorityId = authorityId;
+  }
+
+  public String getAuthority() {
+    return authority;
+  }
+
+  public void setAuthority(String authority) {
+    this.authority = authority;
+  }
+
+  public AuthoritiesEntity() {
+  }
+
+  public AuthoritiesEntity(Integer authorityId, String authority, String role) {
+    this.authorityId = authorityId;
+    this.authority = authority;
+    this.role = role;
+  }
+
+  @Override
+  public String toString() {
+    return "AuthoritiesEntity{" +
+        "authorityId=" + authorityId +
+        ", authority='" + authority + '\'' +
+        ", role='" + role + '\'' +
+        '}';
+  }
+}
+```
+
+7. В файле `UserService` необходимо собрать данные об `authorities` и `roles` которые имеет пользователь
+```
+// Fetch authorities from authorities table
+    Stream<Stream<String>> streamStreamAuths = userEntity.getUserRoles()
+        .stream()
+        // ['ROLE_ADMIN']
+        .map(userRoleEntity -> {
+          // ['ADD_BOOK', 'CREATE_BOOK']
+          Set<AuthoritiesEntity> authoritiesEntities = authoritiesRepository.findByRole(userRoleEntity.getRole());
+          return authoritiesEntities.stream()
+              .map(entity -> entity.getAuthority());
+        });
+
+    // Flatten the stream of streams to get the set of authorities
+    // ['ADD_BOOK', 'CREATE_BOOK']
+    Set<String> authorities = streamStreamAuths
+        .flatMap(authStream -> authStream)
+        .collect(Collectors.toSet());
+
+    // add the Role (from the user_role table) as authorities
+    // because UserDetails does not support adding Role separately as it does not have any setRole
+    userEntity.getUserRoles()
+        .stream()
+        // ['ROLE_ADMIN']
+        // authorities = ['ROLE_ADMIN', 'ADD_BOOK', 'CREATE_BOOK']
+        .forEach(userRoleEntity -> authorities.add(userRoleEntity.getRole()));
+
+    // Set all authorities for the User
+    user.setAuthorities(authorities
+        .stream()
+        .map(auth -> new SimpleGrantedAuthority(auth))
+        .collect(Collectors.toSet()));
+
+    return user;
+```
+
+8. В файле `SecurityConfig` добавить проверку `authorities` и `roles` у пользователя
+NOTE: название роли указываем без слова `ROLE_`, спринг сам добавить префикс
+9. 
+```
+.requestMatchers("/v1/books/{bookId}").access(new WebExpressionAuthorizationManager("hasRole('USER') and hasAuthority('GET_BOOK')"))
+.requestMatchers("/v1/books").access(new WebExpressionAuthorizationManager("hasRole('ADMIN') and hasAuthority('CREATE_BOOK')"));
+```
+
+## Авторизация по jwt token
+
+

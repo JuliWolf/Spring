@@ -1,7 +1,9 @@
-package com.skb.authorization_books.security;
+package com.skb.authorization_books.filters;
 
+import com.skb.authorization_books.config.AuthenticationConfigConstants;
 import com.skb.authorization_books.user.User;
-import com.skb.authorization_books.user.UserService;
+import com.skb.authorization_books.service.UserService;
+import com.skb.authorization_books.utils.JwtTokenUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -20,7 +22,7 @@ import java.io.IOException;
 import org.apache.commons.lang3.StringUtils;
 
 @Component
-public class JwtRequestFilter extends OncePerRequestFilter {
+public class JwtAuthorizationFilter extends OncePerRequestFilter {
 // класс OncePerRequestFilter гарантирует, что фильтр будет использоваться единожды для каждого запроса
   @Autowired
   private UserService userService;
@@ -30,7 +32,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-    final String requestTokenHeader = request.getHeader("Authorization");
+    final String requestTokenHeader = request.getHeader(AuthenticationConfigConstants.HEADER_STRING);
 
     // Проверяем строку их заголовка `Authorization`
     if (!hasAuthorizationBearer(requestTokenHeader)) {
@@ -84,7 +86,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
   }
 
   private boolean hasAuthorizationBearer(String header) {
-    if (ObjectUtils.isEmpty(header) || !header.startsWith("Bearer")) {
+    if (ObjectUtils.isEmpty(header) || !header.startsWith(AuthenticationConfigConstants.TOKEN_PREFIX)) {
       return false;
     }
 

@@ -1,6 +1,10 @@
-package com.skb.authorization_books.security;
+package com.skb.authorization_books.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.skb.authorization_books.filters.JwtAuthenticationFilter;
+import com.skb.authorization_books.filters.JwtAuthorizationFilter;
+import com.skb.authorization_books.security.BooksWsAuthenticationEntryPoint;
+import com.skb.authorization_books.security.UserDetailsServiceImpl;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -11,11 +15,10 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.expression.WebExpressionAuthorizationManager;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
-
-import static org.springframework.security.authorization.AuthorityAuthorizationManager.hasRole;
 
 @Configuration
 @EnableWebSecurity
@@ -27,13 +30,14 @@ public class SecurityConfig  {
   }
 
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http, BooksWsAuthenticationEntryPoint authenticationEntryPoint, JwtRequestFilter jwtRequestFilter) throws Exception {
+  public SecurityFilterChain filterChain(
+      HttpSecurity http,
+      BooksWsAuthenticationEntryPoint authenticationEntryPoint,
+      JwtAuthorizationFilter jwtAuthorizationFilter,
+      JwtAuthenticationFilter jwtAuthenticationFilter
+  ) throws Exception {
     // Enable CORS and disable CSRF
     http = http.cors().and().csrf().disable();
-
-    // Set jwt token authentication
-    http = http
-        .addFilter(jwtRequestFilter);
 
     // Set session management to stateless
     http = http
@@ -71,11 +75,10 @@ public class SecurityConfig  {
         // Our private endpoints
 //        .anyRequest().authenticated();
 
-    // Add JWT token filter
-//    http.addFilterBefore(
-//        jwtTokenFilter,
-//        UsernamePasswordAuthenticationFilter.class
-//    );
+    // Set jwt token authentication
+    http
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterBefore(jwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
   }
@@ -105,5 +108,4 @@ public class SecurityConfig  {
     source.registerCorsConfiguration("/**", config);
     return new CorsFilter(source);
   }
-
 }

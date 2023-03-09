@@ -1,7 +1,8 @@
-package com.skb.authorization_books.user;
+package com.skb.authorization_books.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.skb.authorization_books.user.User;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ResourceUtils;
 

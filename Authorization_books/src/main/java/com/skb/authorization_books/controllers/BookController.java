@@ -1,5 +1,6 @@
-package com.skb.authorization_books.book;
+package com.skb.authorization_books.controllers;
 
+import com.skb.authorization_books.book.Book;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

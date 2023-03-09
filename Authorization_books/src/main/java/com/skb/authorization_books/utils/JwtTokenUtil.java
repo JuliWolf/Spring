@@ -1,5 +1,6 @@
-package com.skb.authorization_books.security;
+package com.skb.authorization_books.utils;
 
+import com.skb.authorization_books.config.AuthenticationConfigConstants;
 import com.skb.authorization_books.user.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -17,8 +18,6 @@ import java.util.function.Function;
 
 @Component
 public class JwtTokenUtil implements Serializable {
-
-  public static final long JWT_TOKEN_VALIDITY = 5 * 60 * 60;
 
   Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
@@ -57,7 +56,7 @@ public class JwtTokenUtil implements Serializable {
         .setClaims(claims)
         .setSubject(user.getUsername())
         .setIssuedAt(new Date(System.currentTimeMillis()))
-        .setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY * 1000))
+        .setExpiration(new Date(System.currentTimeMillis() + AuthenticationConfigConstants.EXPIRATION_TIME))
         .signWith(key)
         .compact();
   }

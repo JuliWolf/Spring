@@ -1,5 +1,7 @@
-package com.skb.authorization_books.user;
+package com.skb.authorization_books.repositories;
 
+import com.skb.authorization_books.entity.UserEntity;
+import com.skb.authorization_books.entity.UserRoleEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
