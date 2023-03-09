@@ -448,4 +448,261 @@ NOTE: название роли указываем без слова `ROLE_`, с
 
 ## Авторизация по jwt token
 
+1. Для создания JWT токена необходимо подключить библиотеки для работы с токеном
+```
+<dependency>
+  <groupId>io.jsonwebtoken</groupId>
+  <artifactId>jjwt-api</artifactId>
+  <version>0.11.5</version>
+</dependency>
+<dependency>
+  <groupId>io.jsonwebtoken</groupId>
+  <artifactId>jjwt-impl</artifactId>
+  <version>0.11.5</version>
+  <scope>runtime</scope>
+</dependency>
+<dependency>
+  <groupId>io.jsonwebtoken</groupId>
+  <artifactId>jjwt-jackson</artifactId>
+  <version>0.11.5</version>
+  <scope>runtime</scope>
+</dependency>
+```
+
+2. Создать класс утилиту, который будет хранить базовые методы для кодирования и декодирования токена
+```
+@Component
+public class JwtTokenUtil implements Serializable {
+
+  Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+
+  public String getUsernameFromToken(String token) {
+    // Парсим токен и забираем оттуда subject в котором будет храниться имя пользователя
+    // https://auth0.com/docs/secure/tokens/json-web-tokens/json-web-token-claims
+    return getClaimFromToken(token, Claims::getSubject);
+  }
+
+  public Date getExpirationDateFromToken(String token) {
+    return getClaimFromToken(token, Claims::getExpiration);
+  }
+
+  public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
+    final Claims claims = getAllClaimsFromToken(token);
+    return claimsResolver.apply(claims);
+  }
+
+  private Claims getAllClaimsFromToken(String token) {
+    return Jwts.parserBuilder()
+        .setSigningKey(key)
+        .build()
+        .parseClaimsJws(token)
+        .getBody();
+  }
+
+  private Boolean isTokenExpired(String token) {
+    final Date expiration = getExpirationDateFromToken(token);
+    return expiration.before(new Date());
+  }
+
+  public String generateToken(User user) {
+    Map<String, Object> claims = new HashMap<>();
+    return Jwts
+        .builder()
+        .setClaims(claims)
+        .setSubject(user.getUsername())
+        .setIssuedAt(new Date(System.currentTimeMillis()))
+        .setExpiration(new Date(System.currentTimeMillis() + AuthenticationConfigConstants.EXPIRATION_TIME))
+        .signWith(key)
+        .compact();
+  }
+
+  public Boolean validateToken(String token, User user) {
+    final String username = getUsernameFromToken(token);
+    // Проверяем что полученное имя пользователя сходится с именем из токена
+    // Проверяем не протух ли токен
+    return (
+        username
+        .equals(user.getUsername()) && !isTokenExpired(token)
+    );
+  }
+}
+```
+
+3. Создать класс с константами для работы с JWT токеном
+```
+public class AuthenticationConfigConstants {
+  public static final long EXPIRATION_TIME = 5 * 60 * 60; // 5 days
+  public static final String TOKEN_PREFIX = "Bearer ";
+  public static final String HEADER_STRING = "Authorization";
+}
+```
+
+4. Создать фильтр, который будет выполнятся единожды для каждого запроса и проверять токен
+Основной метод, который необходимо реализовать это doFilterInternal
+в рамках данного методы мы проверяем наличие заголовка с токеном, парсим токен если такой заголовок есть
+проверяем валидность токена и пользователя, который был получен из токена
+```
+@Component
+public class JwtAuthorizationFilter extends OncePerRequestFilter {
+// класс OncePerRequestFilter гарантирует, что фильтр будет использоваться единожды для каждого запроса
+  @Autowired
+  private UserService userService;
+
+  @Autowired
+  private JwtTokenUtil jwtTokenUtil;
+
+  @Override
+  protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    final String requestTokenHeader = request.getHeader(AuthenticationConfigConstants.HEADER_STRING);
+
+    // Проверяем строку их заголовка `Authorization`
+    if (!hasAuthorizationBearer(requestTokenHeader)) {
+      filterChain.doFilter(request, response);
+
+      return;
+    }
+
+    // Обрезаем строку, оставляем только токен
+    String jwtToken = getAccessToken(requestTokenHeader);
+
+    try {
+      // Парсим токен и получаем имя пользователя
+      String username = jwtTokenUtil.getUsernameFromToken(jwtToken);
+
+      if (!hasAuthorizationUser(username)) {
+        filterChain.doFilter(request, response);
+
+        return;
+      }
+
+      // Получаем объект пользователя по имени
+      User user = userService.getUserByUsername(username);
+
+      // Проверяем валидность токена
+      if (!jwtTokenUtil.validateToken(jwtToken, user)) {
+        filterChain.doFilter(request, response);
+
+        return;
+      }
+
+      // Создаем экземпляр класса для дальнейше передачи его в AuthenticationManager
+      UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+          user,
+          null,
+          user.getAuthorities()
+      );
+      authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+      SecurityContextHolder
+          .getContext()
+          .setAuthentication(authToken);
+
+      filterChain.doFilter(request, response);
+    } catch (IllegalArgumentException e) {
+      logger.error("Unable to fetch JWT Token");
+    } catch (ExpiredJwtException e) {
+      logger.error("JWT Token is expired");
+    } catch (Exception e) {
+      logger.error(e.getMessage());
+    }
+  }
+
+  private boolean hasAuthorizationBearer(String header) {
+    if (ObjectUtils.isEmpty(header) || !header.startsWith(AuthenticationConfigConstants.TOKEN_PREFIX)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // Проверяем что полученный пользователь не пустой
+  // Вспомогательный класс SecurityContextHolder хранит в себе данные о текущем аутентифицированном пользователе
+  private boolean hasAuthorizationUser (String username) {
+    return (
+        StringUtils.isNoneEmpty(username) &&
+        null == SecurityContextHolder.getContext().getAuthentication()
+    );
+  }
+
+  private String getAccessToken(String header) {
+    String token = header.split(" ")[1].trim();
+    return token;
+  }
+}
+```
+
+5. Создать класс, который будет авторизовывать пользователя по токену
+```
+@Component
+public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+
+  private final JwtTokenUtil jwtTokenUtil;
+  private final AuthenticationManager authenticationManager;
+
+  @Override
+  @Autowired
+  public void setAuthenticationManager(AuthenticationManager authenticationManager) {
+    super.setAuthenticationManager(authenticationManager);
+  }
+
+  @Autowired
+  public JwtAuthenticationFilter (AuthenticationManager authenticationManager, JwtTokenUtil jwtTokenUtil) {
+    this.jwtTokenUtil = jwtTokenUtil;
+    this.authenticationManager = authenticationManager;
+  }
+
+  @Override
+  public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
+    try {
+      User user = new ObjectMapper()
+          .readValue(request.getInputStream(), User.class);
+
+      return authenticationManager.authenticate(
+          new UsernamePasswordAuthenticationToken(
+              user.getUsername(),
+              user.getPassword(),
+              new ArrayList<>())
+      );
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  protected void successfulAuthentication(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      FilterChain chain,
+      Authentication auth
+  ) throws IOException, ServletException {
+    User user = (User) auth.getPrincipal();
+    String token = jwtTokenUtil.generateToken(user);
+
+    //START - SENDING JWT AS A BODY
+    response.setContentType("application/json");
+    response.setCharacterEncoding("UTF-8");
+    response.getWriter().write(
+        "{\"" + AuthenticationConfigConstants.HEADER_STRING + "\":\"" + AuthenticationConfigConstants.TOKEN_PREFIX + token + "\"}"
+    );
+    //END - SENDING JWT AS A BODY
+
+    //START - SENDING JWT AS A HEADER
+    response.addHeader(AuthenticationConfigConstants.HEADER_STRING, AuthenticationConfigConstants.TOKEN_PREFIX + token);
+    //END - SENDING JWT AS A HEADER
+  }
+}
+```
+
+6. В классе `SecurityConfig` добавить фильтры и отключить сессионные куки
+```
+http = http
+        .sessionManagement()
+        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        .and();
+        
+// Set jwt token authentication
+http
+    .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+    .addFilterBefore(jwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
+```
+
 
