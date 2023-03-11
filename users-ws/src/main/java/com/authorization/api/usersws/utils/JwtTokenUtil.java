@@ -5,12 +5,9 @@ import com.authorization.api.usersws.userDetails.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
 import java.io.Serializable;
-import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,11 +16,9 @@ import java.util.function.Function;
 @Component
 public class JwtTokenUtil implements Serializable {
 
-//  private static String secret = System.getenv("jwtSecret");
+  private static String secret = System.getenv("jwtSecret");
 
-  private Key getSigningKey() {
-    return Keys.secretKeyFor(SignatureAlgorithm.HS256);
-  }
+  byte[] secretKeyBytes = secret.getBytes();
 
   public String getUsernameFromToken(String token) {
     return getClaimFromToken(token, Claims::getSubject);
@@ -40,7 +35,7 @@ public class JwtTokenUtil implements Serializable {
 
   private Claims getAllClaimsFromToken(String token) {
     return Jwts.parserBuilder()
-        .setSigningKey(getSigningKey())
+        .setSigningKey(secretKeyBytes)
         .build()
         .parseClaimsJws(token)
         .getBody();
@@ -59,7 +54,7 @@ public class JwtTokenUtil implements Serializable {
         .setSubject(user.getUsername())
         .setIssuedAt(new Date(System.currentTimeMillis()))
         .setExpiration(new Date(System.currentTimeMillis() + AuthenticationConfigConstants.EXPIRATION_TIME))
-        .signWith(getSigningKey())
+        .signWith(SignatureAlgorithm.HS512, secretKeyBytes)
         .compact();
   }
 
