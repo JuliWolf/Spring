@@ -13,6 +13,8 @@
 /Spring-security/.mvn/
 /authors-ws/target/
 /authors-ws/.mvn/
+/users-ws/target/
+/users-ws/.mvn/
 /books-ws/HELP.md
 /books-ws/target/
 /books-ws/!.mvn/wrapper/maven-wrapper.jar
