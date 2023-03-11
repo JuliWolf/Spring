@@ -11,33 +11,35 @@
 /Spring-REST-POJO/.mvn/
 /Spring-security/target/
 /Spring-security/.mvn/
-/Authorization_books/HELP.md
-/Authorization_books/target/
-/Authorization_books/!.mvn/wrapper/maven-wrapper.jar
-/Authorization_books/!**/src/main/**/target/
-/Authorization_books/!**/src/test/**/target/
-/Authorization_books/### STS ###
-/Authorization_books/.apt_generated
-/Authorization_books/.classpath
-/Authorization_books/.factorypath
-/Authorization_books/.project
-/Authorization_books/.settings
-/Authorization_books/.springBeans
-/Authorization_books/.sts4-cache
+/authors-ws/target/
+/authors-ws/.mvn/
+/books-ws/HELP.md
+/books-ws/target/
+/books-ws/!.mvn/wrapper/maven-wrapper.jar
+/books-ws/!**/src/main/**/target/
+/books-ws/!**/src/test/**/target/
+/books-ws/### STS ###
+/books-ws/.apt_generated
+/books-ws/.classpath
+/books-ws/.factorypath
+/books-ws/.project
+/books-ws/.settings
+/books-ws/.springBeans
+/books-ws/.sts4-cache
 
-/Authorization_books/.idea
-/Authorization_books/*.iws
-/Authorization_books/*.iml
-/Authorization_books/*.ipr
+/books-ws/.idea
+/books-ws/*.iws
+/books-ws/*.iml
+/books-ws/*.ipr
 
-/Authorization_books/nbproject/private/
-/Authorization_books/nbbuild/
-/Authorization_books/dist/
-/Authorization_books/nbdist/
-/Authorization_books/.nb-gradle/
-/Authorization_booksbuild/
-/Authorization_books!**/src/main/**/build/
-/Authorization_books!**/src/test/**/build/
+/books-ws/nbproject/private/
+/books-ws/nbbuild/
+/books-ws/dist/
+/books-ws/nbdist/
+/books-ws/.nb-gradle/
+/books-wsbuild/
+/books-ws!**/src/main/**/build/
+/books-ws!**/src/test/**/build/
 
-/Authorization_books.vscode/
-/Authorization_books/.mvn/
+/books-ws.vscode/
+/books-ws/.mvn/
