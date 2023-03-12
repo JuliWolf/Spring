@@ -1,6 +1,5 @@
 package com.microservices.authorsws.config;
 
-import com.microservices.authorsws.filters.JwtAuthenticationFilter;
 import com.microservices.authorsws.filters.JwtAuthorizationFilter;
 import com.microservices.authorsws.security.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
@@ -30,8 +29,7 @@ public class SecurityConfig  {
   @Bean
   public SecurityFilterChain filterChain(
       HttpSecurity http,
-      JwtAuthorizationFilter jwtAuthorizationFilter,
-      JwtAuthenticationFilter jwtAuthenticationFilter
+      JwtAuthorizationFilter jwtAuthorizationFilter
   ) throws Exception {
     // Enable CORS and disable CSRF
     http = http.cors().and().csrf().disable();
@@ -51,7 +49,6 @@ public class SecurityConfig  {
 
     // Set jwt token authentication
     http
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();

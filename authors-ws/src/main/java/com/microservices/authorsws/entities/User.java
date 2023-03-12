@@ -1,4 +1,4 @@
-package com.microservices.authorsws.userDetails;
+package com.microservices.authorsws.entities;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

@@ -1,16 +1,15 @@
 package com.microservices.authorsws.utils;
 
-import com.microservices.authorsws.config.AuthenticationConfigConstants;
-import com.microservices.authorsws.userDetails.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.Serializable;
+import java.util.Base64;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Function;
 
 @Component
@@ -18,7 +17,8 @@ public class JwtTokenUtil implements Serializable {
 
   private static String secret = System.getenv("jwtSecret");
 
-  byte[] secretKeyBytes = secret.getBytes();
+  byte[] secretKeyBytes = Base64.getEncoder().encode(secret.getBytes());
+  SecretKey secretKey = new SecretKeySpec(secretKeyBytes, SignatureAlgorithm.HS512.getJcaName());
 
   public String getUsernameFromToken(String token) {
     return getClaimFromToken(token, Claims::getSubject);
@@ -28,6 +28,11 @@ public class JwtTokenUtil implements Serializable {
     return getClaimFromToken(token, Claims::getExpiration);
   }
 
+  public <T> T getCustomClaimFromToken (String token, String claimKey) {
+    final Claims claims = getAllClaimsFromToken(token);
+    return (T) claims.get(claimKey);
+  }
+
   public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
     final Claims claims = getAllClaimsFromToken(token);
     return claimsResolver.apply(claims);
@@ -35,7 +40,7 @@ public class JwtTokenUtil implements Serializable {
 
   private Claims getAllClaimsFromToken(String token) {
     return Jwts.parserBuilder()
-        .setSigningKey(secretKeyBytes)
+        .setSigningKey(secretKey)
         .build()
         .parseClaimsJws(token)
         .getBody();
@@ -46,23 +51,7 @@ public class JwtTokenUtil implements Serializable {
     return expiration.before(new Date());
   }
 
-  public String generateToken(User user) {
-    Map<String, Object> claims = new HashMap<>();
-    return Jwts
-        .builder()
-        .setClaims(claims)
-        .setSubject(user.getUsername())
-        .setIssuedAt(new Date(System.currentTimeMillis()))
-        .setExpiration(new Date(System.currentTimeMillis() + AuthenticationConfigConstants.EXPIRATION_TIME))
-        .signWith(SignatureAlgorithm.HS512, secretKeyBytes)
-        .compact();
-  }
-
-  public Boolean validateToken(String token, User user) {
-    final String username = getUsernameFromToken(token);
-    return (
-        username
-        .equals(user.getUsername()) && !isTokenExpired(token)
-    );
+  public Boolean validateToken(String token) {
+    return !isTokenExpired(token);
   }
 }
