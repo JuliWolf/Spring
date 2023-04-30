@@ -15,6 +15,10 @@
 /authors-ws/.mvn/
 /users-ws/target/
 /users-ws/.mvn/
+/users-oauth2-ws/target/
+/users-oauth2-ws/.mvn/
+/spring-boot/target/
+/spring-boot/.mvn/
 /books-ws/HELP.md
 /books-ws/target/
 /books-ws/!.mvn/wrapper/maven-wrapper.jar
