@@ -19,6 +19,8 @@
 /users-oauth2-ws/.mvn/
 /spring-boot/target/
 /spring-boot/.mvn/
+/Spring-patterns/.gradle/
+/Spring-patterns/target/
 /books-ws/HELP.md
 /books-ws/target/
 /books-ws/!.mvn/wrapper/maven-wrapper.jar
