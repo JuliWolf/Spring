@@ -98,5 +98,119 @@ Constructor injection с помощью @RequiredArgsConstructor</br>
 Минусы
   - Часто используеют lombok для создания конструктора, в связи с чем при написании не будет подсвечивания ошибки при неправильном inject
 
-## Primary
+## Свои аннотации
+```
+@Retention(RetentionPolicy.RUNTIME)
+@Component
+@Qualifier
+@Autowired
+public @interface Treatment {
+  String type();
+}
+```
+
+```
+@Component
+public class Знахарь implements Целитель {
+  @Treatment(type=Лечение.АЛКОГОЛЬ)
+  private Лечение водка;
+
+  @Override
+  public void исцелять(Patient patient) {
+    System.out.println("Определяю лечение...");
+    водка.применить(patient);
+  }
+}
+```
+1. Когда мы хотим написать свою аннотацию, которая будет заменять и дополнять аннотацию `@Component`
+- id бина все-равно будет вытаскиваться из value `@Component` а не из type, так как type является qualifier
+- для данного кейса value для компонента будет являться `водка` то есть заинджектится класс Водка
+
+## Chain of responsibility
+Задача:</br>
+1. Написать метод handle для определенных объектов
+2. Далее просят дополнить метод handle для еще нескольких объектов</br>
+Итого: Нарушается принцип `Open Close principle`
+```
+public class MainHandler {
+  public void handle(DataObject t) {
+    handle1(t);
+    handle2(t);
+    handle3(t);
+  }
+}
+```
+Решение: </br>
+1. Создать интерфейс `Handler`
+2. Создать ряд необходимых реализаций данного интерфейса
+3. Заинджектить лист `Handler`
+4. перебрать через forEach и вызыать у всех методом метод handler или любой другой, входящий в интерфейс `Handler`
+```
+@Service
+public class MainHandler {
+
+  @Autowired
+  private List<Handler> handlers;
+  
+  public void handle (DataObject t) {
+    handlers.forEach(handler -> handler.handle(t));
+  }
+}
+```
+
+### Как заинджектить свой лист, кастомный лист
+1. Нужна некоторая своя аннотация `@InjectList`, которая в качестве параметра будет принимать список классов
+2. Создадим свой стартер</br>
+Основой стартера будет аннотация + BeanPostProcessor который будет находить поля с данной аннотацией и добавлять данные
+```
+@Retention(RetentionPolicy.RUNTIME)
+public @interface InjectList {
+  Class[] value();
+}
+```
+
+```
+public class InjectListBPP implements BeanPostProcessor {
+  @Autowired
+  private ApplicationContext context;
+
+  @lombok.SneakyThrows
+  @Override
+  public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+    Set<Field> fields = ReflectionUtils.getAllFields(bean.getClass(), field -> field.isAnnotationPresent(InjectList.class));
+
+    for (Field field : fields) {
+      InjectList annotation = field.getAnnotation(InjectList.class);
+      List<Object> list = Arrays.stream(annotation.value())
+          .map(aClass -> Introspector.decapitalize(aClass.getSimpleName()))
+          .map(name -> context.getBean(name))
+          .collect(Collectors.toList());
+
+      field.setAccessible(true);
+      field.set(bean, list);
+    }
+    return bean;
+  }
+}
+```
+
+Использование
+```
+@Component
+public class Знахарь implements Целитель {
+  @InjectList({Баня.class, Аспирин.class})
+  private List<Лечение> лечениеs;
+
+  @Override
+  public void исцелять(Patient patient) {
+    System.out.println("Определяю лечение...");
+//    водка.применить(patient);
+    лечениеs.forEach(лечение -> лечение.применить(patient));
+  }
+}
+```
+
+Таким образом мы можем определять какие именно классы будут инджектится в наш лист
+
+##
 

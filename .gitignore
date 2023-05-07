@@ -21,6 +21,10 @@
 /spring-boot/.mvn/
 /Spring-patterns/.gradle/
 /Spring-patterns/target/
+/Spring-patterns/build/
+/Spring-patterns/injectListStarter/.gradle/
+/Spring-patterns/injectListStarter/target/
+/Spring-patterns/injectListStarter/build/
 /books-ws/HELP.md
 /books-ws/target/
 /books-ws/!.mvn/wrapper/maven-wrapper.jar

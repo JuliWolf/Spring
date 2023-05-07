@@ -17,7 +17,7 @@ public class Scwarzenegger {
 
   private int stamina = 3;
 
-  @Scheduled(fixedDelay = 500)
+//  @Scheduled(fixedDelay = 500)
   public void killEnemies () {
     if (!veryTired()) {
       kickWithLog();
