@@ -215,7 +215,8 @@ public class Знахарь implements Целитель {
 ## Заменить старые аннотации на новые
 
 1. Импортируем пакет со старыми зависимостями (например https://github.com/Jeka1978/joker-corona-legacy) в котором используются устаревшие аннотации `Singleton`
-2. В стартере создаем класс LegacyBeanDefinitionRegistrar, который будет анализировать пакет и заменять старые бины на новые
+2. В стартере создаем класс LegacyBeanDefinitionRegistrar, который будет анализировать пакет и заменять старые бины на новые</br>
+Эта обработка происходит на этапе компиляции
 ```
 public class LegacyBeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar {
   @Override
@@ -267,4 +268,114 @@ public class Священник implements Целитель {
   }
 }
 ```
+
+## Стратегия и Комманда (Strategy & Command)
+
+### Избавляемся от switch
+Есть сервис, в котором определяется каким методом пациента будут лечить. Способ лечения зависит от пожеланий пациента
+```
+@Service
+public class HospitalImpl implements Hospital {
+  @Autowired
+  private Cleric cleric;
+
+  @Autowired
+  private AlcoDoctor alcoDoctor;
+
+  @Autowired
+  private DefaultHealer defaultHealer;
+
+  @Autowired
+  private Physician physician;
+
+  @Override
+  public void processPatient(Patient patient) {
+    switch (patient.getMethod()) {
+      case Healer.TRADITIONAL -> {
+        physician.treat(patient);
+        break;
+      }
+      case Healer.FOLK -> {
+        cleric.treat(patient);
+        break;
+      }
+      case Healer.ALCOHOL -> {
+        alcoDoctor.treat(patient);
+        break;
+      }
+      default -> defaultHealer.treat(patient);
+    }
+  }
+}
+```
+
+1. Заинджектить мапу, где ключем будет `id` бина, а значением `Healer`
+```
+@Service
+public class NewHospitalImpl implements Hospital {
+  @Autowired
+  private Map<String, Healer> map;
+
+  @Override
+  public void processPatient(Patient patient) {
+      map.getOrDefault(patient.getMethod(), new DefaultHealer()).treat(patient);
+  }
+}
+```
+*Минус 
+- Для данной реализации необходимо задать id бину `@Component(Healer.ALCOHOL)`
+```
+@Component(Healer.ALCOHOL)
+public class AlcoDoctor implements Healer {
+  @TreatmentType(type = Treatment.ALCOHOL)
+  private Treatment cognac;
+
+  @InjectList({Sauna.class, Aspirin.class})
+  private List<Treatment> treatments;
+
+  @Override
+  public void treat(Patient patient) {
+    System.out.println("Определяю лечение...");
+//    водка.применить(patient);
+    treatments.forEach(treatment -> treatment.use(patient));
+  }
+
+  @Override
+  public String myType() {
+    return ALCOHOL;
+  }
+}
+```
+
+2. Заинджектить мапу, где ключем будет тип лечения, а значением `Healer`
+   - Добавить метод `myType` для всех целителей
+```
+  @Override
+  public String myType() {
+    return ALCOHOL;
+  }
+```
+  - Получить лист с Healer в конструкторе и замапить список в мапу
+```
+  private Map<String, Healer> map;
+
+  public NewHospitalImpl (List<Healer> healerList) {
+    map = healerList.stream().collect(toMap(Healer::myType, Function.identity()));
+  }
+```
+*Минус
+- Госпиталь не должен сам составлять себе мапу лекарей. Это должно быть в конфигурации
+
+3. Создать бин в конфигурации, который будет создавать мапу целителей
+  - В файле с аннотацией @Configuration объявить бин
+```
+@Bean
+public Map<String, Healer> hospitalMap (List<Healer> healersList) {
+  map = healerList.stream().collect(toMap(Healer::myType, Function.identity()));
+}
+```
+
+4. 
+
+
 

@@ -15,6 +15,6 @@ import java.lang.annotation.RetentionPolicy;
 @Component
 @Qualifier
 @Autowired
-public @interface Treatment {
+public @interface TreatmentType {
   String type();
 }
