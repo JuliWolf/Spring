@@ -375,7 +375,71 @@ public Map<String, Healer> hospitalMap (List<Healer> healersList) {
 }
 ```
 
-4. 
+4. Созданные целители сами регистрируются в больнице
+- Во время работы системы создается целитель и добавляется в больницу
 
+
+***
+Как в runtime регистрировать бины
+1. Сервис от `ClassLoader`
+- Создать сервис, который будет наследоваться от `ClassLoader`
+- Данный класс будет принимать некий className
+- Находить в какой-то папке класс
+- Создавать класс из байткода
+```
+@Service
+public class CCL extends ClassLoader {
+  @Override
+  @SneakyThrows
+  public Class<?> findClass (String className) {
+    // Ищет в компилированных файлах классы
+    String fileName = "target/classes/"+className.replace('.', File.separatorChar)+".class";
+    // получаем bytecode
+    byte[] bytecode = Files.newInputStream(Path.of(fileName)).readAllBytes();
+    return defineClass(className, bytecode, 0, bytecode.length);
+  }
+}
+```
+2. Создать класс для хранения данных о бине
+```
+@Data
+public class BeanMD {
+  // id
+  private String beanName;
+  // полное название класса
+  private String beanClassName;
+}
+```
+3. Создать контроллер для обработка запроса и создании и регистрации бина по полученным параметрам
+```
+@RestController
+public class BeanRegistratorController {
+  @Autowired
+  private GenericApplicationContext context;
+
+  @Autowired
+  private CCL ccl;
+
+  @SneakyThrows
+  @PostMapping("/regbean")
+  public String regBean(@RequestBody BeanMD beanMD) {
+    // Получаем класс по полному названию файла
+    Class<?> beanClass = ccl.findClass(beanMD.getBeanClassName());
+    // Получаем из контекста beanFactory
+    BeanDefinitionRegistry beanFactory = (BeanDefinitionRegistry) context.getBeanFactory();
+    // Создаем тело бина
+    GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
+    // Настраиваем бин
+    beanDefinition.setScope(BeanDefinition.SCOPE_SINGLETON);
+    beanDefinition.setBeanClass(beanClass);
+    // Регистрируем бин
+    beanFactory.registerBeanDefinition(beanMD.getBeanName(), beanDefinition);
+    // Вызывваем бин для его активации
+    context.getBean(beanMD.getBeanName());
+    
+    return "registered";
+  }
+}
+```
 
 
