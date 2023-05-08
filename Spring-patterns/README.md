@@ -212,5 +212,59 @@ public class Знахарь implements Целитель {
 
 Таким образом мы можем определять какие именно классы будут инджектится в наш лист
 
-##
+## Заменить старые аннотации на новые
+
+1. Импортируем пакет со старыми зависимостями (например https://github.com/Jeka1978/joker-corona-legacy) в котором используются устаревшие аннотации `Singleton`
+2. В стартере создаем класс LegacyBeanDefinitionRegistrar, который будет анализировать пакет и заменять старые бины на новые
+```
+public class LegacyBeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar {
+  @Override
+  public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry, BeanNameGenerator importBeanNameGenerator) {
+    ImportBeanDefinitionRegistrar.super.registerBeanDefinitions(importingClassMetadata, registry, importBeanNameGenerator);
+
+    // Сканируем определенный пакет
+    Reflections scanner = new Reflections("com.naya.corona.legacy");
+    // Получаем все классы, у которых есть аннотация `Singleton`
+    Set<Class<?>> classes = scanner.getTypesAnnotatedWith(Singleton.class);
+    for (Class<?> aClass : classes) {
+      // Создаем новый BeanDefinition, которым мф будем подменять старый BeanDefinition
+      GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
+      beanDefinition.setBeanClass(aClass);
+      beanDefinition.setScope(BeanDefinition.SCOPE_SINGLETON);
+      // Добавляем метку Legacy
+      beanDefinition.addQualifier(new AutowireCandidateQualifier(Legacy.class));
+      // Регистрируем новый BeanDefinition по имени класса
+      registry.registerBeanDefinition(Introspector.decapitalize(aClass.getSimpleName()), beanDefinition);
+    }
+  }
+}
+```
+*** В данном классе можно подменять бины например которые хранятся в базе данных, подменять бины
+
+3. Регистрируем LegacyBeanDefinitionRegistrar
+```
+@Configuration
+@Import(LegacyBeanDefinitionRegistrar.class)
+public class InjectListConfiguration {
+  @Bean
+  public InjectListBPP injectListBPP () {
+    return new InjectListBPP();
+  }
+}
+```
+
+4. Используем новую аннотацию
+```
+@Component
+public class Священник implements Целитель {
+  @Autowired
+  @Legacy
+  List<Лечение> устаревшиеМетоды;
+
+  @Override
+  public void исцелять(Patient patient) {
+    устаревшиеМетоды.forEach(лечение -> лечение.применить(patient));
+  }
+}
+```
 

@@ -28,6 +28,7 @@ dependencies {
     implementation 'org.projectlombok:lombok:1.18.22'
     annotationProcessor 'org.projectlombok:lombok:1.18.22'
     implementation project('injectListStarter')
+    implementation files('../../joker-corona-legacy-master')
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
