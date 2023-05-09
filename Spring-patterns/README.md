@@ -1,3 +1,4 @@
+from https://www.youtube.com/watch?v=GL1txFxswHA&t=3969s
 # Spring patterns
 
 ## Singleton
