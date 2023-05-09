@@ -519,5 +519,68 @@ public class CustomPointcut extends DynamicMethodMatcherPointcut {
   }
 ```
 
+## Добавить обертку для ответа
+Задача: </br>
+из объекта 
+```
+{
+    "name": "Test",
+    "age": 20,
+    "method": "folk"
+}
+```
+Сделать объект </br>
+```
+{
+    "value": {
+        "name": "Test",
+        "age": 20,
+        "method": "folk"
+    },
+    "corona": false
+}
+```
+
+1. В стартере создаем класс `CoronaWrapper`, в котором будет описана структура финального объекта
+```
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class CoronaWrapper {
+  private Object result;
+  private Boolean corona;
+}
+```
+2. Создаем аннотацию `CoronaController` котоой будет отмечать объекты, которые нуждаются в обертке
+```
+@RestController
+@Retention(RetentionPolicy.RUNTIME)
+public @interface CoronaController {
+}
+```
+3. Создаем `ConrollerAdvice`, который будет описывать что нужно сделать когда над объектом поставлена аннотация `CoronaController` и для каких случаев
+```
+@ControllerAdvice(annotations = CoronaController.class)
+public class CoronaControllerAdvice implements ResponseBodyAdvice {
+  @Override
+  public boolean supports(MethodParameter returnType, Class converterType) {
+    // фильтруем методы, для которых это должно работать
+    return true;
+  }
+
+  @Override
+  public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType, Class selectedConverterType, ServerHttpRequest request, ServerHttpResponse response) {
+    return new CoronaWrapper(body, false);
+  }
+}
+```
+4. Регистрируем бин в конфиге
+```
+  @Bean
+  public CoronaControllerAdvice coronaControllerAdvice () {
+    return new CoronaControllerAdvice();
+  }
+```
 
 

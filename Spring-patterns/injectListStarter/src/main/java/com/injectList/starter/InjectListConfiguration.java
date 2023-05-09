@@ -32,4 +32,9 @@ public class InjectListConfiguration {
     // Связываем customPointcut с фильтром классов, в котором будет происходить обработка
     return new DefaultPointcutAdvisor(customPointcut(), exceptionHandlerAspect());
   }
+
+  @Bean
+  public CoronaControllerAdvice coronaControllerAdvice () {
+    return new CoronaControllerAdvice();
+  }
 }
