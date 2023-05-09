@@ -25,6 +25,11 @@ public class HospitalImpl implements Hospital {
   private Physician physician;
 
   @Override
+  public void register(String type, Healer healer) {
+
+  }
+
+  @Override
   public void processPatient(Patient patient) {
     switch (patient.getMethod()) {
       case Healer.TRADITIONAL -> {

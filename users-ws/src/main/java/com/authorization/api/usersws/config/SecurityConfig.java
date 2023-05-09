@@ -44,7 +44,7 @@ public class SecurityConfig  {
         .anyRequest().authenticated();
 
     // Set jwt token authentication
-    AuthenticationManager
+//    AuthenticationManager
 
     return http.build();
   }

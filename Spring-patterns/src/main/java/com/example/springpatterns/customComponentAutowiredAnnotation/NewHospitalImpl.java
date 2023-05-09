@@ -2,12 +2,10 @@ package com.example.springpatterns.customComponentAutowiredAnnotation;
 
 import com.example.springpatterns.customComponentAutowiredAnnotation.healers.DefaultHealer;
 import com.example.springpatterns.customComponentAutowiredAnnotation.healers.Healer;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -24,17 +22,27 @@ public class NewHospitalImpl implements Hospital {
 //  private Map<String, Healer> map;
 //
 
-  // 2.
+//  // 2.
+//  // String - тип полученный из метода myType
+//  // Healer - лекарь
+//  private Map<String, Healer> map;
+
+//  public NewHospitalImpl (List<Healer> healerList) {
+//    map = healerList.stream().collect(toMap(Healer::myType, Function.identity()));
+//  }
+
+  // 4
   // String - тип полученный из метода myType
   // Healer - лекарь
-  private Map<String, Healer> map;
+  private Map<String, Healer> map = new HashMap<>();
 
-  public NewHospitalImpl (List<Healer> healerList) {
-    map = healerList.stream().collect(toMap(Healer::myType, Function.identity()));
+  @Override
+  public void register(String type, Healer healer) {
+    map.put(type, healer);
   }
 
   @Override
   public void processPatient(Patient patient) {
-      map.getOrDefault(patient.getMethod(), new DefaultHealer()).treat(patient);
+    map.getOrDefault(patient.getMethod(), new DefaultHealer()).treat(patient);
   }
 }

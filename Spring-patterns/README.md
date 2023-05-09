@@ -442,4 +442,82 @@ public class BeanRegistratorController {
 }
 ```
 
+4. Сделать пост запрос через postman 
+```
+{
+    "beanName": "shaman",
+    "beanClassName": "com.example.springpatterns.customComponentAutowiredAnnotation.healers.Shaman"
+}
+```
+
+## Динамический pointcut
+Хотим, чтобы у нас была дефолтная обработка исключения.</br>
+Данную проверку будем хотим брать из стартера и динамически настраивать pointcut параметры</br>
+В реальных кейсах, у нас будут некоторые кастомные эксепшены, которые мы можем обработать</br>
+
+1. Основная проблема в том, что `pointcut` может хранить только статические данные
+2. Создаем класс, который будет вызывать исходных метод и перехватывать ошибку, если она появится
+```
+public class ExceptionHandlerAspect implements MethodInterceptor {
+  @Override
+  public Object invoke(MethodInvocation invocation) throws Throwable {
+    try {
+      // Вызыв настоящего метода
+      return invocation.proceed();
+    } catch (Throwable ex) {
+      System.out.println("PSR е работает!!!");
+      throw ex;
+    }
+  }
+}
+```
+3. Создаем кастомный Pointcut, который будет являться бином
+- В него можно будет передать название пакета для создания прокси
+- Данный класс анализирует полученное имя пакета и создает прокси
+- Так же можно опрелелить для каких конкретно методов данный pointcut будет работать
+```
+public class CustomPointcut extends DynamicMethodMatcherPointcut {
+  // можно передать через пропсы при использовании пакета
+  // @Value
+  // через configurationProperties
+  private String packagesToHandle = "com.example.springpatterns.dynamic_aop.psr";
+
+  @Override
+  public boolean matches(Method method, Class<?> targetClass, Object... args) {
+    // Определяет для каких методов нужно вызывать
+    return true;
+  }
+
+  @Override
+  public ClassFilter getClassFilter() {
+    // методы вызывается 1 раз, чтобы отфильтровать классы для проксирования
+    return new ClassFilter() {
+      @Override
+      public boolean matches(Class<?> aClass) {
+        return aClass.getPackage().getName().contains(packagesToHandle);
+      }
+    };
+  }
+}
+```
+4. Регистрируем бины в конфиге
+```
+  @Bean
+  public CustomPointcut customPointcut () {
+    return new CustomPointcut();
+  }
+
+  @Bean
+  public ExceptionHandlerAspect exceptionHandlerAspect () {
+    return new ExceptionHandlerAspect();
+  }
+
+  @Bean
+  public DefaultPointcutAdvisor defaultPointcutAdvisor () {
+    // Связываем customPointcut с фильтром классов, в котором будет происходить обработка
+    return new DefaultPointcutAdvisor(customPointcut(), exceptionHandlerAspect());
+  }
+```
+
+
 
