@@ -19,6 +19,8 @@
 /users-oauth2-ws/.mvn/
 /spring-boot/target/
 /spring-boot/.mvn/
+/springBuilder/target/
+/springBuilder/.mvn/
 /Spring-patterns/.gradle/
 /Spring-patterns/target/
 /Spring-patterns/build/
