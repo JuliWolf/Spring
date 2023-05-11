@@ -1,5 +1,6 @@
 package com.example.springbuilder;
 
+import com.example.springbuilder.annotations.InjectByType;
 import com.example.springbuilder.factory.ObjectFactory;
 import com.example.springbuilder.models.*;
 
@@ -8,8 +9,11 @@ import com.example.springbuilder.models.*;
  * @date 10.05.2023
  */
 public class CoronaDesinfector {
-  private Announcer announcer = ObjectFactory.getInstance().createObject(Announcer.class);
-  private Policeman policeman = ObjectFactory.getInstance().createObject(Policeman.class);
+  @InjectByType
+  private Announcer announcer;
+
+  @InjectByType
+  private Policeman policeman;
 
   public void start (Room room) {
     // todo сообщить всем присутствующим в комнате, о начале дезинфекции, и попросить всех свалить

@@ -1,18 +1,16 @@
 package com.example.springbuilder.factory;
 
-import com.example.springbuilder.annotations.InjectProperty;
+import com.example.springbuilder.config.Config;
+import com.example.springbuilder.config.JavaConfig;
+import com.example.springbuilder.config.ObjectConfigurator;
 import com.example.springbuilder.models.AngryPolicemanImpl;
 import com.example.springbuilder.models.Policeman;
 import lombok.SneakyThrows;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
 

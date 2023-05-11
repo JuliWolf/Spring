@@ -1,4 +1,4 @@
-package com.example.springbuilder.factory;
+package com.example.springbuilder.config;
 
 /**
  * @author JuliWolf

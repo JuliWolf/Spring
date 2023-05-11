@@ -1,4 +1,4 @@
-package com.example.springbuilder.factory;
+package com.example.springbuilder.config;
 
 import com.example.springbuilder.annotations.InjectProperty;
 import lombok.SneakyThrows;

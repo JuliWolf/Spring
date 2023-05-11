@@ -265,3 +265,48 @@ private ObjectFactory () {
 - Теперь мы можем иметь сколько угодно классов для настройки объектов
 - Всю логику по настройки объекта мы передаем другим классам
 - Класс ObjectFactory занимается только одной задачей - созданиаем объектов
+
+*Минусы
+- Мы используем lookup a не инверсию контроля
+- Инверсия контроля (don't call up we call you)
+
+## Отделить бизнес логику от конфигурации
+1. Создаем аннотацию `InjectByType`
+```
+@Retention(RetentionPolicy.RUNTIME)
+public @interface InjectByType {
+}
+```
+2. Создем конфигуратор для обработки аннотации
+- Если у поля есть аннотация `InjectByType` то создаем требуюемый объект через `ObjectFactory`
+```
+public class InjectByTypeAnnotationObjectConfigurator implements ObjectConfigurator {
+  @SneakyThrows
+  @Override
+  public void configure(Object t) {
+    for (Field field : t.getClass().getDeclaredFields()) {
+      if (field.isAnnotationPresent(InjectByType.class)) {
+        field.setAccessible(true);
+        Object object = ObjectFactory.getInstance().createObject(field.getType());
+        field.set(t, object);
+      }
+    }
+  }
+}
+```
+3. В основном файле приложения заменяем инициализацию полей на поля с аннотацией
+```
+public class CoronaDesinfector {
+  @InjectByType
+  private Announcer announcer;
+
+  @InjectByType
+  private Policeman policeman;
+  
+  ...
+}
+```
+
+*Итого</br>
+- Вся инфраструктурная логика у нас вынесена в конфигураторы и передана `ObjectFactory`
+

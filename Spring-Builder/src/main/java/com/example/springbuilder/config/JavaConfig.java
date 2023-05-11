@@ -1,5 +1,6 @@
-package com.example.springbuilder.factory;
+package com.example.springbuilder.config;
 
+import com.example.springbuilder.config.Config;
 import lombok.Getter;
 import org.reflections.Reflections;
 
