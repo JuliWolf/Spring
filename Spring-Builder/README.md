@@ -134,3 +134,48 @@ public class JavaConfig implements Config {
 - Мы получили централизованное место для создания всех объектов
   - Если надо менять имплементацию не надо лезть в код (Гибкость)
   - Перед тем как фабрика отдаст объект, она его может настроить согласно нашим конвенциям, которые мы придумаем
+
+## Добавляем обработку объекта
+1. После проверки класса и получения итогового класса мы можем добавить обработку свойств
+2. Из класса вытаскиваем все свойства
+3. Пытаемся получить аннотацию `InjectProperty.class`
+4. Получаем все содержимое файла `application.properties` для того чтобы использовать его настройки для настройки объекта
+5. Если у аннотации `InjectProperty` имеется значение `value` то используем его для значения поля, иначе используем название поля как значения
+```
+@SneakyThrows
+  public <T> T createObject (Class<T> type) {
+    Class<? extends T> implClass = type;
+
+    if (type.isInterface()) {
+      implClass = config.getImpClass(type);
+    }
+    T t = implClass.getDeclaredConstructor().newInstance();
+
+    for (Field field : implClass.getDeclaredFields()) {
+      InjectProperty annotation = field.getAnnotation(InjectProperty.class);
+      String path = ClassLoader.getSystemClassLoader().getResource("application.properties").getPath();
+      Stream<String> lines = new BufferedReader(new FileReader(path)).lines();
+      Map<String, String> propertiesMap = lines
+          .map(line -> line.split("="))
+          .collect(toMap(arr -> arr[0], arr -> arr[1]));
+
+      String value;
+      if ( annotation != null) {
+        if (annotation.value().isEmpty()) {
+          value = propertiesMap.get(field.getName());
+        } else {
+          value = propertiesMap.get(annotation.value());
+        }
+
+        field.setAccessible(true);
+        // t указывается для того, чтобы засетить пропертю к конкретному объекту
+        field.set(t, value);
+      }
+    }
+
+    return t;
+  }
+```
+
+*Минус</br>
+  - Мы зашили всю логику модификации классов в `ObjectFactory`, что в дальнейшем приведет к ее быстрому увеличению в размерах
