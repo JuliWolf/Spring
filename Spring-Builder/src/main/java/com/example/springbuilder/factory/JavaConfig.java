@@ -1,5 +1,6 @@
 package com.example.springbuilder.factory;
 
+import lombok.Getter;
 import org.reflections.Reflections;
 
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.Set;
  * @date 10.05.2023
  */
 public class JavaConfig implements Config {
+  @Getter
   private Reflections scanner;
   private Map<Class, Class> ifc2ImplClass;
 

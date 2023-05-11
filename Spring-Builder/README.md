@@ -179,3 +179,89 @@ public class JavaConfig implements Config {
 
 *Минус</br>
   - Мы зашили всю логику модификации классов в `ObjectFactory`, что в дальнейшем приведет к ее быстрому увеличению в размерах
+
+## Вынести настройку объекта в отдельный класс
+
+1. Создаем интерфейс `ObjectConfigurator` с одним методом `configure`
+```
+public interface ObjectConfigurator {
+  void configure (Object t);
+}
+```
+2. Имплементируем интерфейс
+  - В метод configure перенесена вся логика из `ObjectFactory`
+  - Добавилось кеширование значений из файла "application.properties"
+
+```
+public class InjectPropertyAnnotationObjectConfigurator implements ObjectConfigurator {
+  private Map<String, String> propertiesMap;
+
+  @SneakyThrows
+  public InjectPropertyAnnotationObjectConfigurator () {
+    String path = ClassLoader.getSystemClassLoader().getResource("application.properties").getPath();
+    Stream<String> lines = new BufferedReader(new FileReader(path)).lines();
+    propertiesMap = lines
+        .map(line -> line.split("="))
+        .collect(toMap(arr -> arr[0], arr -> arr[1]));
+  }
+
+  @Override
+  @SneakyThrows
+  public void configure(Object t) {
+    Class<?> implClass = t.getClass();
+    
+    for (Field field : implClass.getDeclaredFields()) {
+      InjectProperty annotation = field.getAnnotation(InjectProperty.class);
+      if ( annotation != null) {
+        String value;
+        if (annotation.value().isEmpty()) {
+          value = propertiesMap.get(field.getName());
+        } else {
+          value = propertiesMap.get(annotation.value());
+        }
+
+        field.setAccessible(true);
+        // t указывается для того, чтобы засетить пропертю к конкретному объекту
+        field.set(t, value);
+      }
+    }
+  }
+}
+```
+
+3. В классе `ObjectFactory` получаем все классы, имплементирующие интерфейс `ObjectConfigurator`
+```
+private List<ObjectConfigurator> configurators = new ArrayList<>();
+...
+
+@SneakyThrows
+private ObjectFactory () {
+  config = new JavaConfig("com.example", new HashMap<>(Map.of(Policeman.class, AngryPolicemanImpl.class)));
+  for (Class<? extends ObjectConfigurator> aClass : config.getScanner().getSubTypesOf(ObjectConfigurator.class)) {
+    configurators.add(aClass.getDeclaredConstructor().newInstance());
+  }
+}
+```
+
+4. Итерируемся по всем полученным конфигураторам и даем им настроить объект
+```
+@SneakyThrows
+  public <T> T createObject (Class<T> type) {
+    Class<? extends T> implClass = type;
+
+    if (type.isInterface()) {
+      implClass = config.getImpClass(type);
+    }
+    T t = implClass.getDeclaredConstructor().newInstance();
+    
+    // Настраиваем
+    configurators.forEach(objectConfigurator -> objectConfigurator.configure(t));
+    
+    return t;
+  }
+```
+
+*Итого</br>
+- Теперь мы можем иметь сколько угодно классов для настройки объектов
+- Всю логику по настройки объекта мы передаем другим классам
+- Класс ObjectFactory занимается только одной задачей - созданиаем объектов

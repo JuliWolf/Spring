@@ -7,7 +7,7 @@ import com.example.springbuilder.annotations.InjectProperty;
  * @date 10.05.2023
  */
 public class RecommendatorImpl implements Recommendator {
-  @InjectProperty
+  @InjectProperty("wisky")
   private String alcohol;
 
   @Override
