@@ -520,3 +520,44 @@ private <T> T wrapWithProxyIfNeeded(Class<T> implClass, T t) {
   return t;
 }
 ```
+
+* Проблема</br>
+При проксировании объектов мы завязаны на интерфейсы</br>
+* Решение</br>
+Использовать библиотеку cglib, которая проксирует через наследование
+
+## cglib
+1. Подключаем библиотеку 
+```
+  <dependency>
+    <groupId>cglib</groupId>
+    <artifactId>cglib</artifactId>
+    <version>3.3.0</version>
+  </dependency>
+```
+
+2. В классе `DeprecatedHandlerProxyConfigurator` добавляем проверку на предмет наличия интерфейсов у класса
+- Если у класс нет интерфейсов, то проксируем через cglib
+```
+public class DeprecatedHandlerProxyConfigurator implements ProxyConfigurator {
+  @Override
+  public Object replaceWithProxyIfNeeded(Object t, Class implClass) {
+    if (implClass.isAnnotationPresent(Deprecated.class)) {
+      if (implClass.getInterfaces().length == 0) {
+        System.out.println(implClass.getSimpleName());
+        return Enhancer.create(implClass, (net.sf.cglib.proxy.InvocationHandler) (proxy, method, args) -> getInvocationHandlerLogic(t, method, args));
+      }
+
+      return Proxy.newProxyInstance(implClass.getClassLoader(), implClass.getInterfaces(), (proxy, method, args) -> getInvocationHandlerLogic(t, method, args));
+    }
+
+    return t;
+  }
+
+  private Object getInvocationHandlerLogic(Object t, Method method, Object[] args) throws IllegalAccessException, InvocationTargetException {
+    System.out.println("********** чтож ты делаешь урод!!! ");
+    // Вызываем метод у оригинального объекта
+    return method.invoke(t, args);
+  }
+}
+```
