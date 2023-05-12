@@ -8,6 +8,7 @@ import com.example.springbuilder.annotations.Singleton;
  * @date 10.05.2023
  */
 @Singleton
+@Deprecated
 public class RecommendatorImpl implements Recommendator {
   @InjectProperty("wisky")
   private String alcohol;

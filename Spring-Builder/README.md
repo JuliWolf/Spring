@@ -461,3 +461,62 @@ public class ObjectFactory {
   }
 }
 ```
+
+## Добавлять дополнительный код при работае классов, например помеченных аннотацией @Deprecated
+Необходимо изменить поведение всех методов класса с аннотацией `@Deprecated`</br>
+1. Мы можем запросксировать объект
+- Прокси создает такой же объкт, который принимает classLoader, интерфейсы (которые имплементирует проксируемый объект) и invocationHandler
+- Прокси каждый раз при вызове метод обращается к invocationHandler и спрашивает что ему нужно делать
+
+2. Создадим новый тип конфигураторов, которые будут запускаться после того, как объекты были настроены
+- t - это объект, который надо настроить
+- implClass - это ссылка на оригинальный объект. Оригинальный объект нужен, так как в процессе обработки прокси конфигураторами в `t` может прийти созданный прокси объект, а не оригинальный
+```
+public interface ProxyConfigurator {
+  Object replaceWithProxyIfNeeded(Object t, Class implClass);
+}
+```
+
+3. Создаем имплементацю Прокси
+```
+public class DeprecatedHandlerProxyConfigurator implements ProxyConfigurator {
+  @Override
+  public Object replaceWithProxyIfNeeded(Object t, Class implClass) {
+    if (implClass.isAnnotationPresent(Deprecated.class)) {
+      return Proxy.newProxyInstance(implClass.getClassLoader(), implClass.getInterfaces(), new InvocationHandler() {
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+          System.out.println("********** чтож ты делаешь урод!!! ");
+          // Вызываем метод у оригинального объекта
+          return method.invoke(t);
+        }
+      });
+    }
+
+    return t;
+  }
+}
+```
+
+4. Добавляем обработку Прокси конфигураторов в `ObjectFactory`
+```
+@SneakyThrows
+public <T> T createObject (Class<T> implClass) {
+  T t = create(implClass);
+
+  configure(t);
+
+  invokeInit(implClass, t);
+
+  t = wrapWithProxyIfNeeded(implClass, t);
+
+  return t;
+}
+  
+private <T> T wrapWithProxyIfNeeded(Class<T> implClass, T t) {
+  for (ProxyConfigurator proxyConfigurator : proxyConfigurators) {
+    t = (T) proxyConfigurator.replaceWithProxyIfNeeded(t, implClass);
+  }
+  return t;
+}
+```

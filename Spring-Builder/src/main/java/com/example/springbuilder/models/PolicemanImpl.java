@@ -2,6 +2,8 @@ package com.example.springbuilder.models;
 
 import com.example.springbuilder.annotations.InjectByType;
 
+import javax.annotation.PostConstruct;
+
 
 /**
  * @author JuliWolf
@@ -12,6 +14,7 @@ public class PolicemanImpl implements Policeman {
   @InjectByType
   private Recommendator recommendator;
 
+  @PostConstruct
   public void init () {
     System.out.println(recommendator.getClass());
   }
