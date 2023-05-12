@@ -377,3 +377,87 @@ public class ApplicationContext {
     coronaDesinfector.start(new Room());
   }
 ```
+
+## Получение экземпляра класса, который был заинджекчен в конструкторе
+Нужно
+```
+public class PolicemanImpl implements Policeman {
+
+  @InjectByType
+  private Recommendator recommendator;
+  
+  public PolicemanImpl () {
+    // will throw an error
+    System.out.println(recommendator.getClass());
+  }
+
+  @Override
+  public void makePeopleLeaveRoom() {
+    System.out.println("пиф паф, бах бах, кыш кыш");
+  }
+}
+```
+
+1. Создать init метод, который будет являться postConstruct методом, то есть вызываться после того, как отработает конструктор
+
+```
+public class PolicemanImpl implements Policeman {
+
+  @InjectByType
+  private Recommendator recommendator;
+
+  public void init () {
+    System.out.println(recommendator.getClass());
+  }
+
+  @Override
+  public void makePeopleLeaveRoom() {
+    System.out.println("пиф паф, бах бах, кыш кыш");
+  }
+}
+```
+
+2. В `ObjectFactory` добавить обработку init методов
+```
+public class ObjectFactory {
+  private final ApplicationContext context;
+  private List<ObjectConfigurator> configurators = new ArrayList<>();
+
+
+  @SneakyThrows
+  public ObjectFactory (ApplicationContext context) {
+    this.context = context;
+    for (Class<? extends ObjectConfigurator> aClass : context.getConfig().getScanner().getSubTypesOf(ObjectConfigurator.class)) {
+      configurators.add(aClass.getDeclaredConstructor().newInstance());
+    }
+  }
+
+  @SneakyThrows
+  public <T> T createObject (Class<T> implClass) {
+    T t = create(implClass);
+
+    configure(t);
+
+    invokeInit(implClass, t);
+
+    return t;
+  }
+
+  private <T> void invokeInit(Class<T> implClass, T t) throws IllegalAccessException, InvocationTargetException {
+    for (Method method : implClass.getMethods()) {
+      if (method.isAnnotationPresent(PostConstruct.class)) {
+        method.invoke(t);
+      }
+    }
+  }
+
+  private <T> void configure(T t) {
+    configurators.forEach(objectConfigurator -> objectConfigurator.configure(t, context));
+  }
+
+  private <T> T create(Class<T> implClass) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+    T t = implClass.getDeclaredConstructor().newInstance();
+    return t;
+  }
+}
+```
