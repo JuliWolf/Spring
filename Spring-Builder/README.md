@@ -310,3 +310,70 @@ public class CoronaDesinfector {
 *Итого</br>
 - Вся инфраструктурная логика у нас вынесена в конфигураторы и передана `ObjectFactory`
 
+## Кеширование Singleton
+1. Создаем класс приложения, который будет являться некоторым связующим элементом
+- Создает конфиг
+- Инициализирует контекст
+- Создает `ObjectFactory`
+- Передает контекст фабрике
+- Возвращает контекст
+
+```
+public class Application {
+  public static ApplicationContext run (String packageToScan, Map<Class, Class> ifc2ImplClass) {
+    JavaConfig config = new JavaConfig(packageToScan, ifc2ImplClass);
+    ApplicationContext context = new ApplicationContext(config);
+    ObjectFactory objectFactory = new ObjectFactory(context);
+    // todo - init all singletons which are not lazy
+    context.setFactory(objectFactory);
+    return context;
+  }
+}
+```
+
+2. Создаем класс контекст, задачей которого будет проверить полученный класс и  закешировать синглтоны
+```
+public class ApplicationContext {
+  @Setter
+  private ObjectFactory factory;
+  private Map<Class, Object> cache = new ConcurrentHashMap<>();
+
+  @Getter
+  private Config config;
+
+  public ApplicationContext(Config config) {
+    this.config = config;
+  }
+
+
+  public <T> T getObject (Class<T> type) {
+    Class<? extends T> implClass = type;
+
+    if (cache.containsKey(type)) {
+      return (T) cache.get(type);
+    }
+
+    if (type.isInterface()) {
+      implClass = config.getImpClass(type);
+    }
+
+    T t = factory.createObject(implClass);
+
+    if (implClass.isAnnotationPresent(Singleton.class)) {
+      cache.put(type, t);
+    }
+
+    return t;
+  }
+}
+```
+
+3. Обновляем основной метод main, Теперь запуск приложения будет происходить через `Application.run`
+```
+  public static void main(String[] args) {
+//    CoronaDesinfector coronaDesinfector = ObjectFactory.getInstance().createObject(CoronaDesinfector.class);
+    ApplicationContext context = Application.run("com.example.springbuilder", new HashMap<>(Map.of(Policeman.class, PolicemanImpl.class)));
+    CoronaDesinfector coronaDesinfector = context.getObject(CoronaDesinfector.class);
+    coronaDesinfector.start(new Room());
+  }
+```
