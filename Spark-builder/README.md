@@ -84,3 +84,25 @@ public interface Finalizer {
   Object doAction (Dataset<Row> rowDataset);
 }
 ```
+
+## Как будет работать SparkInvocationHandlerFactory
+1. Когда `SparkInvocationHandlerFactory` обращается он определяет
+- Получить данные с помощью `DataExtractor`
+- Трансвормируем полученные данные
+- Вызываем finalizer - тем самым возвращаем данные
+```
+@Override
+public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+  Dataset<Row> dataset = dataExtractor.load(pathToData, context);
+  List<SparkTransformation> transformations = transformationChain.get(method);
+
+  for (SparkTransformation transformation : transformations) {
+    dataset = transformation.transform(dataset);
+  }
+
+  Finalizer finalizer = finalizerMap.get(method);
+
+  Object retVal = finalizer.doAction(dataset);
+  return retVal;
+}
+```

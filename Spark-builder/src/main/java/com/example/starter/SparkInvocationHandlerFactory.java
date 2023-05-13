@@ -1,5 +1,9 @@
 package com.example.starter;
 
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.springframework.context.ConfigurableApplicationContext;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -25,8 +29,20 @@ public class SparkInvocationHandlerFactory implements InvocationHandler {
   // Терминальная операция (у каждого метода свой список)
   private Map<Method, Finalizer> finalizerMap;
 
+  private ConfigurableApplicationContext context;
+
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-    return null;
+    Dataset<Row> dataset = dataExtractor.load(pathToData, context);
+    List<SparkTransformation> transformations = transformationChain.get(method);
+
+    for (SparkTransformation transformation : transformations) {
+      dataset = transformation.transform(dataset);
+    }
+
+    Finalizer finalizer = finalizerMap.get(method);
+
+    Object retVal = finalizer.doAction(dataset);
+    return retVal;
   }
 }
