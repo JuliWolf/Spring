@@ -21,6 +21,8 @@
 /spring-boot/.mvn/
 /springBuilder/target/
 /springBuilder/.mvn/
+/Spark-builder/target/
+/Spark-builder/.mvn/
 /Spring-patterns/.gradle/
 /Spring-patterns/target/
 /Spring-patterns/build/
