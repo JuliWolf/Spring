@@ -1,6 +1,7 @@
 package com.example.sparkbuilder;
 
 import com.example.starter.Source;
+import com.example.starter.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,4 +19,7 @@ import lombok.NoArgsConstructor;
 public class Speaker {
   private String name;
   private int age;
+
+  @Transient
+  private String bbb;
 }
