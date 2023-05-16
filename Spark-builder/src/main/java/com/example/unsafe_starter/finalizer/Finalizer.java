@@ -1,4 +1,4 @@
-package com.example.starter;
+package com.example.unsafe_starter.finalizer;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -8,5 +8,5 @@ import org.apache.spark.sql.Row;
  * @date 13.05.2023
  */
 public interface Finalizer {
-  Object doAction (Dataset<Row> rowDataset);
+  Object doAction (Dataset<Row> dataset, Class<?> model);
 }

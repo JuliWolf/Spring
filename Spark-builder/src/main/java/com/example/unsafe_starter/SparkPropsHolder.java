@@ -1,4 +1,4 @@
-package com.example.starter;
+package com.example.unsafe_starter;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

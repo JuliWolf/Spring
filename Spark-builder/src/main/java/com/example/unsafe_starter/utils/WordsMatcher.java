@@ -1,4 +1,4 @@
-package com.example.starter;
+package com.example.unsafe_starter.utils;
 
 import java.beans.Introspector;
 import java.util.ArrayList;
@@ -15,7 +15,13 @@ import static java.util.Arrays.asList;
 public class WordsMatcher {
   public static String findAndRemoveMatchingPiecesIfExists(Set<String> options, List<String> pieces) {
     StringBuilder match = new StringBuilder(pieces.remove(0));
-    List<String> remainingOptions = options.stream().filter(option -> option.toLowerCase().startsWith(match.toString().toLowerCase())).collect(Collectors.toList());
+    List<String> remainingOptions = options.stream().filter(
+        option -> option.toLowerCase()
+            .startsWith(
+                match
+                    .toString()
+                    .toLowerCase()))
+            .collect(Collectors.toList());
     if (remainingOptions.isEmpty()) {
       return "";
     }

@@ -1,4 +1,4 @@
-package com.example.starter;/**
+package com.example.unsafe_starter.annotations;/**
  * @author JuliWolf
  * @date 13.05.2023
  */

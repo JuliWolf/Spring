@@ -1,5 +1,9 @@
-package com.example.starter;
+package com.example.unsafe_starter.invocationHandler;
 
+import com.example.unsafe_starter.OrderedBag;
+import com.example.unsafe_starter.filterTransformation.SparkTransformation;
+import com.example.unsafe_starter.dataExtractor.DataExtractor;
+import com.example.unsafe_starter.finalizer.Finalizer;
 import lombok.Builder;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -39,12 +43,12 @@ public class SparkInvocationHandler implements InvocationHandler {
     List<SparkTransformation> transformations = transformationChain.get(method);
 
     for (SparkTransformation transformation : transformations) {
-      dataset = transformation.transform(dataset);
+      dataset = transformation.transform(dataset, new OrderedBag<>(args));
     }
 
     Finalizer finalizer = finalizerMap.get(method);
 
-    Object retVal = finalizer.doAction(dataset);
+    Object retVal = finalizer.doAction(dataset, modelClass);
     return retVal;
   }
 }

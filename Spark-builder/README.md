@@ -1,3 +1,7 @@
+from</br>
+https://www.youtube.com/watch?v=hTC12FfCqT4 </br>
+https://www.youtube.com/watch?v=yWEy7j5lvaE </br></br>
+
 # Spark builder
 
 Задача:
@@ -195,7 +199,7 @@ public class SparkApplicationContextInitializer  implements ApplicationContextIn
 - private Map<String, Finalizer> finalizerMap; - для хранения "финальных" методов
 - private ConfigurableApplicationContext context; - контекст
 
-3. Метод create
+3. Метод `create` в `SparkInvocationHandlerFactory`
 ```
 public SparkInvocationHandler create (Class<? extends SparkRepository> sparkRepoInterface) {
   // Получаем название класса
@@ -258,3 +262,30 @@ public SparkInvocationHandler create (Class<? extends SparkRepository> sparkRepo
       .build();
 }
 ```
+
+## Создадим имплментации Finalizer
+```
+public class CountFinalizer implements Finalizer {
+  @Override
+  public Object doAction(Dataset<Row> dataset, Class<?> model) {
+    return dataset.count();
+  }
+}
+```
+
+```
+public class CollectFinalizer implements Finalizer {
+  @Override
+  public Object doAction(Dataset<Row> dataset, Class<?> model) {
+    Encoder<?> encoder = Encoders.bean(model);
+    return dataset.as(encoder).collectAsList();
+  }
+}
+```
+
+## Как инджектить все зависимости
+- Можно создать спринг контекст внутри спринга
+- Данный контекст будет являться временным и удаляться после того как все необходимые действия будут произведены
+- В связи с чем мы можем сделать из классов бины и пользоваться `@Autowired`
+
+## 

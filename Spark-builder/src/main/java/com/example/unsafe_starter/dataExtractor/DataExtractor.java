@@ -1,4 +1,4 @@
-package com.example.starter;
+package com.example.unsafe_starter.dataExtractor;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;

@@ -1,10 +1,12 @@
-package com.example.starter;
+package com.example.unsafe_starter;
 
+import com.example.unsafe_starter.invocationHandler.SparkInvocationHandlerFactory;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.reflections.Reflections;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.beans.Introspector;
 import java.lang.reflect.Proxy;
@@ -17,6 +19,12 @@ import java.util.Set;
 public class SparkApplicationContextInitializer  implements ApplicationContextInitializer {
   @Override
   public void initialize(ConfigurableApplicationContext applicationContext) {
+    AnnotationConfigApplicationContext tempContext = new AnnotationConfigApplicationContext("com.example.unsave_starter");
+    SparkInvocationHandlerFactory factory = tempContext.getBean(SparkInvocationHandlerFactory.class);
+    tempContext.close();
+
+    factory.setRealContext(applicationContext);
+
     registerSparkBean(applicationContext);
 
     // Получаем значение из файла окружения
@@ -31,7 +39,7 @@ public class SparkApplicationContextInitializer  implements ApplicationContextIn
       Object golem = Proxy.newProxyInstance(
           sparkRepoInterface.getClassLoader(),
           new Class[]{sparkRepoInterface},
-          invocationHandler
+          factory.create(sparkRepoInterface)
       );
 
       // регистрируем бин

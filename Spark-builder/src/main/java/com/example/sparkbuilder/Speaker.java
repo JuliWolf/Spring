@@ -1,7 +1,7 @@
 package com.example.sparkbuilder;
 
-import com.example.starter.Source;
-import com.example.starter.Transient;
+import com.example.unsafe_starter.annotations.Source;
+import com.example.unsafe_starter.annotations.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

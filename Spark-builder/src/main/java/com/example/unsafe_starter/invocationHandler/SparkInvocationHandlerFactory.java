@@ -1,8 +1,20 @@
-package com.example.starter;
+package com.example.unsafe_starter.invocationHandler;
 
-import org.apache.commons.collections.map.HashedMap;
+import com.example.unsafe_starter.DataExtractorResolver;
+import com.example.unsafe_starter.SparkRepository;
+import com.example.unsafe_starter.filterTransformation.SparkTransformation;
+import com.example.unsafe_starter.utils.WordsMatcher;
+import com.example.unsafe_starter.annotations.Source;
+import com.example.unsafe_starter.annotations.Transient;
+import com.example.unsafe_starter.dataExtractor.DataExtractor;
+import com.example.unsafe_starter.finalizer.Finalizer;
+import com.example.unsafe_starter.transformationSpider.TransformationSpider;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.stereotype.Component;
 
+import java.beans.Introspector;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -13,12 +25,16 @@ import java.util.stream.Collectors;
  * @author JuliWolf
  * @date 14.05.2023
  */
+@Component
+@RequiredArgsConstructor
 public class SparkInvocationHandlerFactory {
 
-  private DataExtractorResolver dataExtractorResolver;
-  private Map<String, TransformationSpider> spiderMap;
-  private Map<String, Finalizer> finalizerMap;
-  private ConfigurableApplicationContext context;
+  private final DataExtractorResolver dataExtractorResolver;
+  private final Map<String, TransformationSpider> spiderMap;
+  private final Map<String, Finalizer> finalizerMap;
+
+  @Setter
+  private ConfigurableApplicationContext realContext;
 
   public SparkInvocationHandler create (Class<? extends SparkRepository> sparkRepoInterface) {
     // Получаем название класса
@@ -60,13 +76,13 @@ public class SparkInvocationHandlerFactory {
           currentSpider = spiderMap.get(spiderName);
         }
 
-        transformations.add(currentSpider.getTransformation(methods));
+        transformations.add(currentSpider.getTransformation(methodWords, fieldNames));
       }
 
       transformationChain.put(method, transformations);
       String finalizerName = "collect";
       if (methodWords.size() == 1) {
-        finalizerName = methodWords.get(0);
+        finalizerName = Introspector.decapitalize(methodWords.get(0));
       }
       method2Finalizer.put(method, finalizerMap.get(finalizerName));
     }
@@ -77,7 +93,7 @@ public class SparkInvocationHandlerFactory {
         .dataExtractor(dataExtractor)
         .transformationChain(transformationChain)
         .finalizerMap(method2Finalizer)
-        .context(context)
+        .context(realContext)
         .build();
   }
 
