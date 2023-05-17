@@ -288,4 +288,70 @@ public class CollectFinalizer implements Finalizer {
 - Данный контекст будет являться временным и удаляться после того как все необходимые действия будут произведены
 - В связи с чем мы можем сделать из классов бины и пользоваться `@Autowired`
 
-## 
+## Передача аргументов для фильтров
+
+Для каждого фильтра нам необходимо передавать необходимые аргументы</br>
+Для этого нам понадобится изменить структуру `transformationChain`</br>
+Будем использовать `Tuple`</br>
+`private Map<Method, List<Tuple2<SparkTransformation, List<String>>>> transformationChain;`</br>
+За каждым названием методом будет закреплен лист, в котором будет хранится Tuple2, состоящий из трансформации и листа с аргументами</br></br>
+
+Трансформация теперь возвращает `Tuple2<SparkTransformation, List<String>>`
+```
+@Component("findBy")
+@RequiredArgsConstructor
+public class FindByTransformationSpider implements TransformationSpider {
+
+  private final Map<String, FilterTransformation> filterTransformationMap;
+
+  @Override
+  public Tuple2<SparkTransformation, List<String>> getTransformation(List<String> methodWords, Set<String> fieldNames) {
+    List<String> columnNames = List.of(WordsMatcher.findAndRemoveMatchingPiecesIfExists(fieldNames, methodWords));
+    String filterName = WordsMatcher.findAndRemoveMatchingPiecesIfExists(filterTransformationMap.keySet(), methodWords);
+    return new Tuple2<>(filterTransformationMap.get(filterName), columnNames);
+  }
+}
+```
+
+SparkInvocationHandler теперь так же принимает Tuple, который был получен в ходе работы трансформаций
+```
+@Builder
+public class SparkInvocationHandler implements InvocationHandler {
+  // Класс модели (1)
+  private Class<?> modelClass;
+
+  // Ссылка на данные для данной модели(1)
+  private String pathToData;
+
+  // Класс для извлечения данных(1)
+  private DataExtractor dataExtractor;
+
+  // Трансформации (у каждого метода свой список)
+  private Map<Method, List<Tuple2<SparkTransformation, List<String>>>> transformationChain;
+
+  // Терминальная операция (у каждого метода свой список)
+  private Map<Method, Finalizer> finalizerMap;
+
+  private ConfigurableApplicationContext context;
+
+  @Override
+  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    Dataset<Row> dataset = dataExtractor.load(pathToData, context);
+    List<Tuple2<SparkTransformation, List<String>>> tuple2List = transformationChain.get(method);
+
+    for (Tuple2<SparkTransformation, List<String>> tuple : tuple2List) {
+      SparkTransformation sparkTransformation = tuple._1();
+      List<String> columnNames = tuple._2();
+      dataset = sparkTransformation.transform(dataset, columnNames, new OrderedBag<>(args));
+    }
+
+    Finalizer finalizer = finalizerMap.get(method);
+
+    Object retVal = finalizer.doAction(dataset, modelClass);
+    return retVal;
+  }
+}
+```
+
+
+

@@ -1,7 +1,6 @@
 package com.example.sparkbuilder;
 
 import com.example.unsafe_starter.annotations.Source;
-import com.example.unsafe_starter.annotations.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,14 +8,15 @@ import lombok.NoArgsConstructor;
 
 /**
  * @author JuliWolf
- * @date 13.05.2023
+ * @date 17.05.2023
  */
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Source("Spark-builder/data/speakers.json")
-public class Speaker {
+@Source("Spark-builder/data/criminals.csv")
+public class Criminal {
+  private long id;
   private String name;
-  private long age;
+  private int number;
 }

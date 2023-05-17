@@ -8,6 +8,7 @@ import lombok.Builder;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.springframework.context.ConfigurableApplicationContext;
+import scala.Tuple2;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -30,7 +31,7 @@ public class SparkInvocationHandler implements InvocationHandler {
   private DataExtractor dataExtractor;
 
   // Трансформации (у каждого метода свой список)
-  private Map<Method, List<SparkTransformation>> transformationChain;
+  private Map<Method, List<Tuple2<SparkTransformation, List<String>>>> transformationChain;
 
   // Терминальная операция (у каждого метода свой список)
   private Map<Method, Finalizer> finalizerMap;
@@ -40,10 +41,12 @@ public class SparkInvocationHandler implements InvocationHandler {
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     Dataset<Row> dataset = dataExtractor.load(pathToData, context);
-    List<SparkTransformation> transformations = transformationChain.get(method);
+    List<Tuple2<SparkTransformation, List<String>>> tuple2List = transformationChain.get(method);
 
-    for (SparkTransformation transformation : transformations) {
-      dataset = transformation.transform(dataset, new OrderedBag<>(args));
+    for (Tuple2<SparkTransformation, List<String>> tuple : tuple2List) {
+      SparkTransformation sparkTransformation = tuple._1();
+      List<String> columnNames = tuple._2();
+      dataset = sparkTransformation.transform(dataset, columnNames, new OrderedBag<>(args));
     }
 
     Finalizer finalizer = finalizerMap.get(method);

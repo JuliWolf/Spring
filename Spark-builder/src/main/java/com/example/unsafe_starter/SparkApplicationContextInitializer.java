@@ -19,7 +19,7 @@ import java.util.Set;
 public class SparkApplicationContextInitializer  implements ApplicationContextInitializer {
   @Override
   public void initialize(ConfigurableApplicationContext applicationContext) {
-    AnnotationConfigApplicationContext tempContext = new AnnotationConfigApplicationContext("com.example.unsave_starter");
+    AnnotationConfigApplicationContext tempContext = new AnnotationConfigApplicationContext("com.example.unsafe_starter");
     SparkInvocationHandlerFactory factory = tempContext.getBean(SparkInvocationHandlerFactory.class);
     tempContext.close();
 
@@ -55,7 +55,11 @@ public class SparkApplicationContextInitializer  implements ApplicationContextIn
     // Вытаскиваем из `application.properties` название приложения
     String appName = applicationContext.getEnvironment().getProperty("spark.app-name");
     // Создаем бины
-    SparkSession sparkSession = SparkSession.builder().appName(appName).master("local[*]").getOrCreate();
+    SparkSession sparkSession = SparkSession.builder()
+        .appName(appName)
+        .master("local[*]")
+        .config("spark.driver.bindAddress", "127.0.0.1")
+        .getOrCreate();
     JavaSparkContext sparkContext = new JavaSparkContext(sparkSession.sparkContext());
     // Регистрируем бины
     applicationContext.getBeanFactory().registerSingleton("sparkContext", sparkContext);

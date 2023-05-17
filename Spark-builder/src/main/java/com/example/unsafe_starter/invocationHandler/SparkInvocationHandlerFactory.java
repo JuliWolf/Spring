@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
+import scala.Tuple2;
 
 import java.beans.Introspector;
 import java.lang.reflect.Field;
@@ -49,7 +50,8 @@ public class SparkInvocationHandlerFactory {
     // будет хранить в себе имплементации "финальных" методов
     Map<Method, Finalizer> method2Finalizer = new HashMap<>();
     // будет хранить в себе список методов трансформаций
-    Map<Method, List<SparkTransformation>> transformationChain = new HashMap<>();
+    // Список таплов где трансформация прикреплена к листу колонок, которые данная трансформация будет использовать
+    Map<Method, List<Tuple2<SparkTransformation, List<String>>>> transformationChain = new HashMap<>();
 
     Method[] methods = sparkRepoInterface.getMethods();
     /* method -> List<User> findByNameOfGrandmotherContainsAndAgeLessThanOrderByAgeAndNameSave
@@ -65,7 +67,7 @@ public class SparkInvocationHandlerFactory {
       * {"find", "by", "of", "grandmother", "contains" ..etc}
       */
       List<String> methodWords = WordsMatcher.toWordsByJavaConvention(name);
-      List<SparkTransformation> transformations = new ArrayList<>();
+      List<Tuple2<SparkTransformation, List<String>>> transformations = new ArrayList<>();
 
       while (methodWords.size() > 1) {
         // 1й список -> название стратегий таких как findBy, OrderBy
