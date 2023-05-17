@@ -353,5 +353,54 @@ public class SparkInvocationHandler implements InvocationHandler {
 }
 ```
 
+## Сортировка
+
+1. Реализовать Класс `SortTransformation`
+```
+public class SortTransformation implements SparkTransformation {
+  @Override
+  public Dataset<Row> transform(Dataset<Row> dataset, List<String> columnNames, OrderedBag<Object> args) {
+    return dataset
+        .orderBy(
+            columnNames.get(0),
+            columnNames.stream().skip(1).toArray(String[]::new)
+        );
+  }
+}
+```
+
+2. Реализовать спайдера сортировки
+```
+@Component("orderBy")
+public class OrderByTransformationSpider implements TransformationSpider {
+  @Override
+  public Tuple2<SparkTransformation, List<String>> getTransformation(List<String> methodWords, Set<String> fieldNamed) {
+    // Сюда придет как минимум одно слово для сортировки
+    String sortColumn = WordsMatcher.findAndRemoveMatchingPiecesIfExists(fieldNamed, methodWords);
+
+    List<String> additional = new ArrayList<>();
+    while (!methodWords.isEmpty() && methodWords.get(0).equalsIgnoreCase("and")) {
+      // Убираем `and`
+      methodWords.remove(0);
+      // кладем слово, следующее за `and`
+      additional.add(WordsMatcher.findAndRemoveMatchingPiecesIfExists(fieldNamed, methodWords));
+    }
+
+    additional.add(0 , sortColumn);
+
+    return new Tuple2<>(new SortTransformation(), additional);
+  }
+}
+```
+
+3. Создаем новый метод в интерфейсе с сортировкой
+```
+public interface CriminalRepo extends SparkRepository<Criminal> {
+  List<Criminal> findByNumberGreaterThanOrderByNumber(int min);
+}
+```
+
+## Метод Contains
+
 
 

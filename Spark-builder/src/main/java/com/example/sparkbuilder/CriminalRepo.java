@@ -9,5 +9,7 @@ import java.util.List;
  * @date 17.05.2023
  */
 public interface CriminalRepo extends SparkRepository<Criminal> {
-  List<Criminal> findByNumberGreaterThan(int min);
+  List<Criminal> findByNumberGreaterThanOrderByNumber(int min);
+
+  long findByNameContainsCount(String s);
 }
