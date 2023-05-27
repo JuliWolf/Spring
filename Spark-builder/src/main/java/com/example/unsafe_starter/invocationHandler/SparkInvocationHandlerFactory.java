@@ -3,6 +3,7 @@ package com.example.unsafe_starter.invocationHandler;
 import com.example.unsafe_starter.DataExtractorResolver;
 import com.example.unsafe_starter.SparkRepository;
 import com.example.unsafe_starter.filterTransformation.SparkTransformation;
+import com.example.unsafe_starter.postFinalizer.LazyCollectionInjectorPostFinalizer;
 import com.example.unsafe_starter.utils.WordsMatcher;
 import com.example.unsafe_starter.annotations.Source;
 import com.example.unsafe_starter.annotations.Transient;
@@ -95,6 +96,7 @@ public class SparkInvocationHandlerFactory {
         .dataExtractor(dataExtractor)
         .transformationChain(transformationChain)
         .finalizerMap(method2Finalizer)
+        .postFinalizer(new LazyCollectionInjectorPostFinalizer(realContext))
         .context(realContext)
         .build();
   }

@@ -45,7 +45,7 @@ public class CreateCoursesDemo {
       session.getTransaction().commit();
 
       System.out.println("Done!");
-    }finally {
+    } finally {
       // add clean up code
       session.close();
 

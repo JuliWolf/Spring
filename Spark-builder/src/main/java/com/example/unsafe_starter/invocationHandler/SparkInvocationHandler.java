@@ -4,6 +4,7 @@ import com.example.unsafe_starter.OrderedBag;
 import com.example.unsafe_starter.filterTransformation.SparkTransformation;
 import com.example.unsafe_starter.dataExtractor.DataExtractor;
 import com.example.unsafe_starter.finalizer.Finalizer;
+import com.example.unsafe_starter.postFinalizer.PostFinalizer;
 import lombok.Builder;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -36,6 +37,9 @@ public class SparkInvocationHandler implements InvocationHandler {
   // Терминальная операция (у каждого метода свой список)
   private Map<Method, Finalizer> finalizerMap;
 
+  // Фаналайзер, который будет обрабатывать итоговые данные если они являются наследниками коллекций
+  private PostFinalizer postFinalizer;
+
   private ConfigurableApplicationContext context;
 
   @Override
@@ -52,6 +56,6 @@ public class SparkInvocationHandler implements InvocationHandler {
     Finalizer finalizer = finalizerMap.get(method);
 
     Object retVal = finalizer.doAction(dataset, modelClass);
-    return retVal;
+    return postFinalizer.postFinalize(retVal);
   }
 }

@@ -24,15 +24,15 @@ public class CollectFinalizer implements Finalizer {
     Encoder<?> encoder = Encoders.bean(modelClass);
 
     // Костыль
-//    List<String> listFieldNames = Arrays.stream(encoder.schema().fields()).filter(structField -> structField.dataType() instanceof ArrayType)
-//        .map(StructField::name)
-//        .collect(Collectors.toList());
-//    for (String fieldName : listFieldNames) {
-//
-//      ParameterizedType genericType = (ParameterizedType) modelClass.getDeclaredField(fieldName).getGenericType();
-//      Class c = (Class) genericType.getActualTypeArguments()[0];
-//      dataset = dataset.withColumn(fieldName, functions.lit(null).cast(DataTypes.createArrayType(DataTypes.createStructType(Encoders.bean(c).schema().fields()))));
-//    }
+    List<String> listFieldNames = Arrays.stream(encoder.schema().fields()).filter(structField -> structField.dataType() instanceof ArrayType)
+        .map(StructField::name)
+        .collect(Collectors.toList());
+    for (String fieldName : listFieldNames) {
+
+      ParameterizedType genericType = (ParameterizedType) modelClass.getDeclaredField(fieldName).getGenericType();
+      Class c = (Class) genericType.getActualTypeArguments()[0];
+      dataset = dataset.withColumn(fieldName, functions.lit(null).cast(DataTypes.createArrayType(DataTypes.createStructType(Encoders.bean(c).schema().fields()))));
+    }
 
     return dataset.as(encoder).collectAsList();
   }

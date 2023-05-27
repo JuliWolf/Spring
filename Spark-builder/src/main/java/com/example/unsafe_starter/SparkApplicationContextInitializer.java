@@ -1,5 +1,6 @@
 package com.example.unsafe_starter;
 
+import com.example.unsafe_starter.dataExtractor.DataExtractor;
 import com.example.unsafe_starter.invocationHandler.SparkInvocationHandlerFactory;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
@@ -21,6 +22,10 @@ public class SparkApplicationContextInitializer  implements ApplicationContextIn
   public void initialize(ConfigurableApplicationContext applicationContext) {
     AnnotationConfigApplicationContext tempContext = new AnnotationConfigApplicationContext("com.example.unsafe_starter");
     SparkInvocationHandlerFactory factory = tempContext.getBean(SparkInvocationHandlerFactory.class);
+    // Вытаскивае DataExtractorResolver
+    DataExtractorResolver extractorResolver = tempContext.getBean(DataExtractorResolver.class);
+    // Регистрируем resolver в реальном контексте
+    applicationContext.getBeanFactory().registerSingleton("sparkDataResolver", extractorResolver);
     tempContext.close();
 
     factory.setRealContext(applicationContext);

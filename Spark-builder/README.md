@@ -402,5 +402,258 @@ public interface CriminalRepo extends SparkRepository<Criminal> {
 
 ## Метод Contains
 
+1. Реализовать класс фильтра `ContainsFilter`
+```
+@Component("contains")
+public class ContainsFilter implements FilterTransformation {
+  @Override
+  public Dataset<Row> transform(Dataset<Row> dataset, List<String> columnNames, OrderedBag<Object> args) {
+    return dataset.filter(functions.col(columnNames.get(0)).contains(args.takeAndRemove()));
+  }
+}
+```
+
+2. Создаем новый метод в интерфейсе с count
+```
+public interface CriminalRepo extends SparkRepository<Criminal> {
+  List<Criminal> findByNumberGreaterThanOrderByNumber(int min);
+
+  long findByNameContainsCount(String s);
+}
+```
+
+## Итоги, как работает
+
+1. Сущности:
+- Data Extractor - для получения данных
+- Transformation Spiders - для промежуточных трансвормаций
+- Finalizers - Итогового преобразования данных
+
+2. Что делает InvocationHandlerFactory
+- Говорит Data Extractor взять данные
+- При помощи Transformation Spiders троит цепь на каждый метод
+- Подбираем Finalizer
+- Отдает все в фабрику
+
+## Ленивые коллекции
+
+1. Задача:
+- Подтягивать связанные коллеции после finalizer (реализация связей)
+
+2. Создадим класс Order, который по ключу `criminalId` будет связан с сущностью Criminal
+```
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Source("Spark-builder/data/orders.csv")
+public class Order {
+  private String name;
+  private String desc;
+  private long price;
+  private long criminalId;
+}
+```
+
+3. Создаем аннотацию `@ForeignKey` для обозначения ключа
+```
+@Retention(RUNTIME)
+public @interface ForeignKey {
+}
+```
+
+4. В модели Criminal обавляем связку с Order
+```
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Source("Spark-builder/data/criminals.csv")
+public class Criminal {
+  private long id;
+  private String name;
+  private int number;
+  
+  @ForeignKey("criminalId")
+  private List<Order> orders;
+}
+
+```
+
+5. Для заполнения коллеции нам необходимо создать класс, который будет содержать логику ленивой коллеции, а так же PostFinalizer , который будет обрабатывать данные после Finalizer
+
+## Ленивая коллекция
+1. Создаем новый класс `LazySparkList`, который будет имплементировать интерфейс List
+```
+@Data
+public class LazySparkList implements List {
+  @Delegate
+  private List content;
+
+  // Ссылка на объект родителя
+  private long ownerId;
+
+  // Модель для приведения типа объекта
+  private Class<?> modelClass;
+
+  // Название поля, по которму будет просисходить связь
+  private String foreignKeyName;
+
+  // Путь до файла с данными
+  private String pathToSource;
+
+  public boolean initialized () {
+    return content != null && !content.isEmpty();
+  }
+}
+```
+
+2. Аннотация `@Delegate` из ломбока реализует все методы интерфейса и делегирует их родителю
+
+## Класс для получения данных и кеширования данных
+```
+public class FirstLevelCacheService {
+  private Map<Class<?>, Dataset<Row>> model2Dataset = new HashMap<>();
+
+  @Autowired
+  private DataExtractorResolver extractorResolver;
+  
+  public List readDataFor(long ownerId, Class<?> modelClass, String pathToSource, String foreignKey, ConfigurableApplicationContext context) {
+    // Если данных по указанной моделе ранее не было получени
+    if (!model2Dataset.containsKey(modelClass)) {
+      // Получаем данные
+      DataExtractor extractor = extractorResolver.resolve(pathToSource);
+      Dataset<Row> dataset = extractor.load(pathToSource, context);
+      dataset.persist();
+    }
+    // Определяем encoder по модели
+    Encoder<?> encoder = Encoders.bean(modelClass);
+    // Фильтруем имеющиеся данные
+    return model2Dataset.get(modelClass)
+        .filter(functions.col(foreignKey).equalTo(ownerId))
+        .as(encoder)
+        .collectAsList();
+  }
+}
+```
+
+## Создаем аспект, для обработки методов LazySparkList
+```
+@Aspect
+public class LazyCollectionAspectHandler {
+  private FirstLevelCacheService cacheService;
+  private ConfigurableApplicationContext context;
+  // Для всех методов, которые были унаследованы от List
+  @Before("execution(* com.example.unsafe_starter.LazySparkList.*(..)) && execution(* java.util.List.*(..))")
+  public void setLazyCollections (JoinPoint jp) {
+    LazySparkList lazyList = (LazySparkList) jp.getTarget();
+
+    if (!lazyList.initialized()) {
+      List<Object> content = cacheService.readDataFor(
+          lazyList.getOwnerId(),
+          lazyList.getModelClass(),
+          lazyList.getPathToSource(),
+          lazyList.getForeignKeyName(),
+          context
+      );
+      lazyList.setContent(content);
+    }
+  }
+}
+```
+
+## `FirstLevelCacheService` и `LazySparkList` должны быть бинами
+
+1. Создаем конфигурацию нашего стартера
+```
+@Configuration
+public class StartConf {
+  @Bean
+  @Scope("prototype")
+  public LazySparkList lazySparkList () {
+    return new LazySparkList();
+  }
+
+  @Bean
+  public FirstLevelCacheService firstLevelCacheService () {
+    return new FirstLevelCacheService();
+  }
+
+  @Bean
+  public LazyCollectionAspectHandler lazyCollectionAspectHandler () {
+    return new LazyCollectionAspectHandler();
+  }
+}
+```
+2. Регситрируем файл конфигурации в `spring.factories`
+```
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.example.starter.StartConf
+```
+
+## Добавляем DataExtractorResolver в настоящий контекст
+```
+// SparkApplicationContextInitializer
 
 
+// Вытаскивае DataExtractorResolver
+DataExtractorResolver extractorResolver = tempContext.getBean(DataExtractorResolver.class);
+// Регистрируем resolver в реальном контексте
+applicationContext.getBeanFactory().registerSingleton("sparkDataResolver", extractorResolver);
+```
+
+## Реализуем PostFinalizer
+```
+@RequiredArgsConstructor
+public class LazyCollectionInjectorPostFinalizer implements PostFinalizer {
+  private final ConfigurableApplicationContext realContext;
+
+  @SneakyThrows
+  @Override
+  public Object postFinalize(Object retVal) {
+    // Если не является коллекцией то возвращаем в исходном виде
+    if (!Collection.class.isAssignableFrom(retVal.getClass())) {
+      return retVal;
+    }
+
+    List models = (List) retVal;
+    for (Object model : models) {
+      Field idField = model.getClass().getDeclaredField("id");
+      idField.setAccessible(true);
+      Long ownerId = idField.getLong(model);
+
+      // Получаем все филды класса
+      Field[] fields = model.getClass().getDeclaredFields();
+      for (Field field : fields) {
+        // Проверяем тип филда
+        if (List.class.isAssignableFrom(field.getType())) {
+          // Получаем бин LazySparkList (придет запроксированный)
+          LazySparkList sparkList = realContext.getBean(LazySparkList.class);
+          sparkList.setOwnerId(ownerId);
+          
+          // Пытаемся получить аннотацию ForeignKey
+          String columnName = field.getAnnotation(ForeignKey.class).value();
+          sparkList.setForeignKeyName(columnName);
+          
+          // Получаем класс связанного листа
+          Class<?> embeddedModel = getEmbeddedModel(field);
+          sparkList.setModelClass(embeddedModel);
+          
+          // Получаем путь до данных
+          String pathToData = embeddedModel.getAnnotation(Source.class).value();
+          sparkList.setPathToSource(pathToData);
+
+          field.setAccessible(true);
+          field.set(model,sparkList);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private Class<?> getEmbeddedModel(Field field) {
+    ParameterizedType genericType = (ParameterizedType) field.getGenericType();
+    Class<?> embeddedModel = (Class<?>) genericType.getActualTypeArguments()[0];
+    return embeddedModel;
+  }
+}
+```

@@ -18,8 +18,10 @@ public class SparkBuilderApplication {
     CriminalRepo criminalRepo = context.getBean(CriminalRepo.class);
 //    List<Criminal> criminals = criminalRepo.findByNumberGreaterThanOrderByNumber(15);
 //    criminals.forEach(System.out::println);
-    long count = criminalRepo.findByNameContainsCount("ova");
-    System.out.println(count);
+    List<Criminal> criminals = criminalRepo.findByNameContains("ova");
+    if (criminals.get(0) != null) {
+      criminals.get(0).getOrders().forEach(System.out::println);
+    }
 
   }
 
