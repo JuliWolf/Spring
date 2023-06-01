@@ -29,6 +29,9 @@
 /Spring-patterns/injectListStarter/.gradle/
 /Spring-patterns/injectListStarter/target/
 /Spring-patterns/injectListStarter/build/
+/mockito/target/
+/mockito/.mvn/
+/mockito/build/
 /books-ws/HELP.md
 /books-ws/target/
 /books-ws/!.mvn/wrapper/maven-wrapper.jar
