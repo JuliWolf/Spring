@@ -109,3 +109,52 @@ public class AddExampleMockTest {
 }
 ```
 
+## Рефакторинг используя аннотации
+
+1. Для использования аннотаций Mockito необходимо добавить аннотацию всему классу с тестами
+```
+// Junit 5
+@ExtendWith(MockitoExtension.class)
+public class AddExampleMockTest {...}
+
+// Junit 4
+@RunWith(MockitoJUnitRunner.class)
+public class AddExampleMockTest {...}
+```
+
+2. InjectMocks
+- Содаем инстанс класса и инджектит в него моги, созданные с помощью аннотации Mock
+```
+@InjectMocks
+AddExample addExample;
+```
+
+3. Mock
+- Создает класс, в который можно будет добавить моковые данные
+```
+@Mock
+CalculateService calculateService;
+```
+
+4. Код, который выполняется перед методами
+```
+@Before
+public void before () {
+addExample.setCalculateService(calculateService);
+}
+```
+
+5. Результат
+```
+@Test
+public void getSumServiceTest () {
+    // подкладываем данные в сервис
+    when(calculateService.retrieveCalculateSum())
+        .thenReturn(new int[] {1,2,3});
+    
+    int actualResult = addExample.getSumService();
+    int expectedResult = 6;
+    Assertions.assertEquals(expectedResult, actualResult);
+}
+```
+
