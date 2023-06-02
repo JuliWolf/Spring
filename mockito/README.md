@@ -158,3 +158,33 @@ public void getSumServiceTest () {
 }
 ```
 
+## Проверка нескольких вариантов в тесте
+- Используем 2 раза метод `thenReturn`
+- Для первого раза вернет 10
+- Для второго 20
+```
+public class SampleList {
+  @Test
+  public void listSizeTest () {
+    List mock = mock(List.class);
+    when(mock.size()).thenReturn(10).thenReturn(20);
+    assertEquals(10, mock.size());
+    assertEquals(20, mock.size());
+  }
+}
+```
+
+## Сводка аннотаций Junit
+| Назначение                                           | Junit4       | Junit5       |
+|------------------------------------------------------|--------------|--------------|
+| Обозначение теста                                    | @Test        | @Test        |
+| Выполнять до всех методов тестов в текущем классе    | @BeforeClass | @BeforeAll   |
+| Выполнять после всех методов тестов в текущем классе | @AfterClass  | @AfterAll    |
+| Выполнять перед запуском каждого метода              | @Before      | @BeforeEach  |
+| Выполнять после выполнения каждого метода            | @After       | @AfterEach   |
+| Задизейблить метод/класс                             | @Ignore      | @Disabled    |
+| Тестировать фабрику для динамических тестов          | NA           | @TestFactory |
+| Связанные тесты (последовательные)                   | NA           | @Nested      |
+| Добавить тег и фильтры                               | NA           | @Tag         |
+| Зарегистрировть кастомное расширение                 | NA           | @ExtendWith  |
+
