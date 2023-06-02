@@ -85,4 +85,27 @@ public class AddExampleStubTest {
 ```
 
 ## Mocking services
+1. Используем статический метод `mock` для создания класса реализующего интерфейс `CalculateService`
+2. Используя статический метод `when` добавляем возвращаемые данные конкретному методу
+```
+public class AddExampleMockTest {
+
+  @Test
+  public void getSumServiceTest () {
+    AddExample addExample = new AddExample();
+
+    // Создаем мок для сервиса
+    CalculateService calculateService = mock(CalculateService.class);
+    // подкладываем данные в сервис
+    when(calculateService.retrieveCalculateSum())
+        .thenReturn(new int[] {1,2,3});
+
+    addExample.setCalculateService(calculateService);
+
+    int actualResult = addExample.getSumService();
+    int expectedResult = 6;
+    Assertions.assertEquals(expectedResult, actualResult);
+  }
+}
+```
 
