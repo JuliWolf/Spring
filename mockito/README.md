@@ -271,3 +271,98 @@ public class HelloWorldTest {
 }
 ```
 
+## Добавляем ожидаемые события
+```
+@ExtendWith(SpringExtension.class)
+@WebMvcTest(HelloWorldController.class)
+public class HelloWorldTest {
+
+  @Autowired
+  private MockMvc mockMvc;
+
+  @Test
+  public void helloWorld () {
+    // Подготавливаем запрос
+    RequestBuilder requestBuilder = MockMvcRequestBuilders.get("/hello").accept(MediaType.APPLICATION_JSON);
+    try {
+      // Делаем вызов и получаем результат
+      MvcResult mvcResult = mockMvc.perform(requestBuilder)
+          // Добавляем ожидаемые события
+          .andExpect(MockMvcResultMatchers.status().isOk())
+          .andExpect(MockMvcResultMatchers.content().string("hello world"))
+          .andReturn();
+      // сравниваем результат
+      assertEquals("hello world", mvcResult.getResponse().getContentAsString());
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+}
+```
+
+## Тестируем эндпоинт, который возвращает объект
+1. Создаем класс объекта
+```
+public class Student {
+  private int id;
+  private String stdName;
+  private String atdAddress;
+
+  public int getId() {
+    return id;
+  }
+
+  public String getStdName() {
+    return stdName;
+  }
+
+  public String getAtdAddress() {
+    return atdAddress;
+  }
+
+  public Student(int id, String stdName, String atdAddress) {
+    this.id = id;
+    this.stdName = stdName;
+    this.atdAddress = atdAddress;
+  }
+
+  @Override
+  public String toString() {
+    return "Student{" +
+        "id=" + id +
+        ", stdName='" + stdName + '\'' +
+        ", atdAddress='" + atdAddress + '\'' +
+        '}';
+  }
+}
+```
+
+2. Добавляем эндпоинт, который будет возвращать объект
+```
+  @GetMapping("/sample-student")
+  public Student getStudentDetails () {
+    return new Student(100, "Peter", "England");
+  }
+```
+
+3. Тестируем ответ в виде string
+```
+  @Test
+  public void getStudentTest () {
+    // Подготавливаем запрос
+    RequestBuilder requestBuilder = MockMvcRequestBuilders.get("/sample-student").accept(MediaType.APPLICATION_JSON);
+    try {
+      // Делаем вызов и получаем результат
+      MvcResult mvcResult = mockMvc.perform(requestBuilder)
+          // Добавляем ожидаемые события
+          .andExpect(MockMvcResultMatchers.status().isOk())
+          .andExpect(MockMvcResultMatchers.content().string("{\"id\":100,\"stdName\":\"Peter\",\"atdAddress\":\"England\"}"))
+          .andReturn();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+```
+
+## Тестирование бизнес сервиса
+
