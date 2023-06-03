@@ -408,3 +408,108 @@ public void getStudentBusinessTest () {
 }
 ```
 
+## Тестирования даты с db
+1. Создать Entity для парсинга объектов с базы данных
+```
+@Entity
+@Table(name="STUDENT")
+public class Student {
+  @Id
+  @GeneratedValue
+  private int id;
+
+  @Column(name="stdName")
+  private String stdName;
+
+  @Column(name="stdAddress")
+  private String atdAddress;
+
+  @Transient
+  private int myValue;
+
+  public Student() {
+
+  }
+
+  public int getId() {
+    return id;
+  }
+
+  public String getStdName() {
+    return stdName;
+  }
+
+  public String getAtdAddress() {
+    return atdAddress;
+  }
+
+  public Student(int id, String stdName, String atdAddress) {
+    this.id = id;
+    this.stdName = stdName;
+    this.atdAddress = atdAddress;
+  }
+
+  @Override
+  public String toString() {
+    return "Student{" +
+        "id=" + id +
+        ", stdName='" + stdName + '\'' +
+        ", atdAddress='" + atdAddress + '\'' +
+        '}';
+
+```
+
+2. Создаем репозиторий студентов
+```
+public interface StudentRepository extends JpaRepository<Student, Integer> {
+}
+```
+
+3. В сервисе добавляем новый метод для получения всех студентов
+```
+@Component
+public class StudentBusinessService {
+
+  @Autowired
+  private StudentRepository studentRepository;
+
+  public List<Student> getAllStudents () {
+    return studentRepository.findAll();
+  }
+}
+```
+
+4. Добавляем новый эндпоинт
+```
+  @GetMapping("/all-students")
+  public List<Student> getAllStudentsDetails () {
+    return studentBusinessService.getAllStudents();
+  }
+```
+
+5. Тестируем
+- Создадим моковый массив
+- Ожидаем тип json
+- Через `objectMapper` превращаем массив в json
+```
+  @Test
+  public void getAllStudentsTest () {
+    List<Student> students = Arrays.asList(
+        new Student(10001, "john", "russia"),
+        new Student(10002, "masha", "New York")
+    );
+
+    when(studentBusinessService.getAllStudents())
+        .thenReturn(students);
+
+    RequestBuilder requestBuilder = MockMvcRequestBuilders.get("/all-students").accept(MediaType.APPLICATION_JSON);
+    try {
+      MvcResult mvcResult = mockMvc.perform(requestBuilder)
+          .andExpect(MockMvcResultMatchers.status().isOk())
+          .andExpect(MockMvcResultMatchers.content().json(objectMapper.writeValueAsString(students)))
+          .andReturn();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+```

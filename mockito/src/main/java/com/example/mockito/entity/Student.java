@@ -1,13 +1,30 @@
 package com.example.mockito.entity;
 
+import jakarta.persistence.*;
+
 /**
  * @author JuliWolf
  * @date 03.06.2023
  */
+@Entity
+@Table(name="STUDENT")
 public class Student {
+  @Id
+  @GeneratedValue
   private int id;
+
+  @Column(name="stdName")
   private String stdName;
-  private String atdAddress;
+
+  @Column(name="stdAddress")
+  private String stdAddress;
+
+  @Transient
+  private int myValue;
+
+  public Student() {
+
+  }
 
   public int getId() {
     return id;
@@ -17,14 +34,14 @@ public class Student {
     return stdName;
   }
 
-  public String getAtdAddress() {
-    return atdAddress;
+  public String getStdAddress() {
+    return stdAddress;
   }
 
-  public Student(int id, String stdName, String atdAddress) {
+  public Student(int id, String stdName, String stdAddress) {
     this.id = id;
     this.stdName = stdName;
-    this.atdAddress = atdAddress;
+    this.stdAddress = stdAddress;
   }
 
   @Override
@@ -32,7 +49,7 @@ public class Student {
     return "Student{" +
         "id=" + id +
         ", stdName='" + stdName + '\'' +
-        ", atdAddress='" + atdAddress + '\'' +
+        ", atdAddress='" + stdAddress + '\'' +
         '}';
   }
 }

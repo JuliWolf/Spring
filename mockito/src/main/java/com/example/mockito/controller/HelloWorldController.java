@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * @author JuliWolf
  * @date 03.06.2023
@@ -29,5 +31,10 @@ public class HelloWorldController {
   @GetMapping("/student-business")
   public Student getStudentBusinessDetails () {
     return studentBusinessService.getStudentDetails();
+  }
+
+  @GetMapping("/all-students")
+  public List<Student> getAllStudentsDetails () {
+    return studentBusinessService.getAllStudents();
   }
 }
