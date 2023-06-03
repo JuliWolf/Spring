@@ -513,3 +513,33 @@ public class StudentBusinessService {
     }
   }
 ```
+
+## Тестируем Сервис
+- Задача сравнить результат jpa с моками
+```
+@ExtendWith(SpringExtension.class)
+public class StudentBusinessServiceTest {
+
+  @InjectMocks
+  private StudentBusinessService studentBusinessService;
+
+  @Mock
+  private StudentRepository studentRepository;
+
+  @Test
+  public void getAllStudentsTest () {
+    List<Student> students = Arrays.asList(
+        new Student(10001, "john", "russia"),
+        new Student(10002, "masha", "New York")
+    );
+
+    when(studentRepository.findAll())
+        .thenReturn(students);
+
+    List<Student> allStudents = studentBusinessService.getAllStudents();
+
+    assertEquals(10001, allStudents.get(0).getId());
+    assertEquals(10002, allStudents.get(1).getId());
+  }
+}
+```
