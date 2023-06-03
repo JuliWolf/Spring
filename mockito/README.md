@@ -365,4 +365,46 @@ public class Student {
 ```
 
 ## Тестирование бизнес сервиса
+1. Создаем сервис
+```
+@Component
+public class StudentBusinessService {
+  public Student getStudentDetails () {
+    return new Student(100, "Michel", "France");
+  }
+}
+```
+
+2. Создаем новый эндпоинт для работы с сервисом
+```
+  @GetMapping("/sample-business")
+  public Student getStudentBusinessDetails () {
+    return studentBusinessService.getStudentDetails();
+  }
+```
+
+3. Создаем тест
+- Нам необходимо будет создать мок сервиса
+```
+@MockBean
+private StudentBusinessService studentBusinessService;
+```
+- тестируем
+```
+@Test
+public void getStudentBusinessTest () {
+
+    when(studentBusinessService.getStudentDetails()).thenReturn(new Student(100, "Michel", "France"));
+    
+    RequestBuilder requestBuilder = MockMvcRequestBuilders.get("/student-business").accept(MediaType.APPLICATION_JSON);
+    try {
+      MvcResult mvcResult = mockMvc.perform(requestBuilder)
+          .andExpect(MockMvcResultMatchers.status().isOk())
+          .andExpect(MockMvcResultMatchers.content().string("{\"id\":100,\"stdName\":\"Michel\",\"atdAddress\":\"France\"}"))
+          .andReturn();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+}
+```
 

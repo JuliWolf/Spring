@@ -1,6 +1,8 @@
 package com.example.mockito.controller;
 
 import com.example.mockito.entity.Student;
+import com.example.mockito.service.StudentBusinessService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -10,6 +12,10 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 public class HelloWorldController {
+
+  @Autowired
+  private StudentBusinessService studentBusinessService;
+
   @GetMapping("/hello")
   public String helloWorld () {
     return "hello world";
@@ -18,5 +24,10 @@ public class HelloWorldController {
   @GetMapping("/sample-student")
   public Student getStudentDetails () {
     return new Student(100, "Peter", "England");
+  }
+
+  @GetMapping("/student-business")
+  public Student getStudentBusinessDetails () {
+    return studentBusinessService.getStudentDetails();
   }
 }
