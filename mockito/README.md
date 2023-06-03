@@ -215,17 +215,59 @@ https://junit.org/junit5/docs/current/user-guide/
 |---------------------------|------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
 | assertEquals              | Поверхностное сравнение, объекты по ссылке                                                                       | `assertEquals(2, calculator.add(1, 1));`                                                                                              |
 | assertNotEquals           | Ожидаем что сравниваемые значения не равны                                                                       | `Assertions.assertNotEquals(3, Calculator.add(2, 2));`                                                                                |
-| assertAll                 | Ожидаем что выполнятся все. Если что-то выполнится с ошибкой, то ошибки объединяются                             | `assertAll("person",  () -> assertEquals("Jane", person.getFirstName()),  <br/>() -> assertEquals("Doe", person.getLastName())<br/>)` |
+| assertAll                 | Ожидаем что выполнятся все. Если что-то выполнится с ошибкой, то ошибки объединяются                             | `assertAll("person",  () -> assertEquals("Jane", person.getFirstName()), () -> assertEquals("Doe", person.getLastName()))`            |
 | assertTrue                | Ожидаем результат true                                                                                           | `assertTrue('a' < 'b', () -> "Assertion messages can be lazily evaluated -- to avoid constructing complex messages unnecessarily.");` |
 | assertFalse               | Ожидаем результат false                                                                                          | `Assertions.assertFalse(falseBool);`                                                                                                  |
 | assertNull                | Ожидаем получить null                                                                                            | `Assertions.assertNull(nullString);`                                                                                                  |
 | assertNotNull             | Ожидаем любое не null значение                                                                                   | `assertNotNull(lastName);`                                                                                                            |
 | assertThrows              | Ожидаем ошибку в ходе выполнения                                                                                 | `assertThrows(ArithmeticException.class, () -> calculator.divide(1, 0));`                                                             |
-| assertTimeout             | Для тестирования долговыполняющихся задач. Если задача не будет выполнена в указанный промежуток, то тест упадет | `Assertions.assertTimeout(Duration.ofMinutes(1), () -> {<br/>return "result";<br/>});`                                                |
+| assertTimeout             | Для тестирования долговыполняющихся задач. Если задача не будет выполнена в указанный промежуток, то тест упадет | `Assertions.assertTimeout(Duration.ofMinutes(1), () -> {return "result";});`                                                          |
 | assertTimeoutPreemptively | Отличается от `assertTimeout` тем, что выполнение `Executable` и `ThrowingSupplier` будет прервано               |                                                                                                                                       |
 | assertArrayEquals         | Ожидаем что массивы будут равны                                                                                  | `Assertions.assertArrayEquals(new int[]{1,2,3}, new int[]{1,2,3}, "Array Equal Test");`                                               |
 | assertIterableEquals      | Ожидаем что ожидаемые и фактические итерации полностью равны "Глубокое сравнение"                                | `Assertions.assertIterableEquals(listOne, listTwo);`                                                                                  |
 | assertLinesMatch          | Сравниваем список строк                                                                                          |                                                                                                                                       |
 | assertSame                | Для сравнение объектов, ожидаем что объекты будут равны                                                          | `Assertions.assertSame(originalObject, cloneObject);`                                                                                 |
 | assertNotSame             | Ожидаем что сравниваемые объекты не равны                                                                        | `Assertions.assertNotSame(originalObject, otherObject);`                                                                              |
-|                           |                                                                                                                  |                                                                                                                                       |
+
+## Тестирование контроллеров
+1. Создаем контроллер, который будет возвращать строку
+```
+@RestController
+public class HelloWorldController {
+  @GetMapping("/hello")
+  public String helloWorld () {
+    return "hello world";
+  }
+}
+```
+
+2. Создаем класс для тестирования контроллера
+- Для тестирования контроллером спринга необходимо добавить аннотацию `@ExtendWith(SpringExtension.class)`
+- Для тестирования эндпоинта необходимо добавить аннотацию `@WebMvcTest(HelloWorldController.class)`
+- Добавляем `MockMvc`. Из него будет создан бин и его можно будет инджектировать в класс теста
+- Необходимо создать моковый запрос с помощью `MockMvcRequestBuilders`
+- Для выполнения запроса вызываем метод `perform`
+```
+@ExtendWith(SpringExtension.class)
+@WebMvcTest(HelloWorldController.class)
+public class HelloWorldTest {
+
+  @Autowired
+  private MockMvc mockMvc;
+
+  @Test
+  public void helloWorld () {
+    // Подготавливаем запрос
+    RequestBuilder requestBuilder = MockMvcRequestBuilders.get("/hello").accept(MediaType.APPLICATION_JSON);
+    try {
+      // Делаем вызов и получаем результат
+      MvcResult mvcResult = mockMvc.perform(requestBuilder).andReturn();
+      // сравниваем результат
+      assertEquals("hello world", mvcResult.getResponse().getContentAsString());
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+}
+```
+
