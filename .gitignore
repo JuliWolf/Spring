@@ -32,6 +32,9 @@
 /mockito/target/
 /mockito/.mvn/
 /mockito/build/
+/reactive/target/
+/reactive/.mvn/
+/reactive/build/
 /books-ws/HELP.md
 /books-ws/target/
 /books-ws/!.mvn/wrapper/maven-wrapper.jar
