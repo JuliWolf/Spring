@@ -1,10 +1,19 @@
-# Junit
-## Что Такое Junit тестирование
++ [Junit](#junit)
++ [Mockito](#mockito)
 
+# Junit
+
++ [Что Такое Junit тестирование](#что-такое-junit-тестирование)
++ [Как Junit работает](#как-junit-работает)
++ [Пример теста](#пример-теста)
++ [Тестирование метода с сервисом](#тестирование-метода-с-сервисом)
++ [Сводка аннотаций Junit](#сводка-аннотаций-junit)
++ [Методы Junit](#методы-junit)
+
+## Что Такое Junit тестирование
 - Фреймворк для тестирования работы классов и его методов
 
 ## Как Junit работает
-
 - раннер Junit запускает тесты и выводит их результат
 - Junit ожидает конкретный результат выполнения и в случае несоотвествия выкидывается ошибка
 
@@ -83,6 +92,58 @@ public class AddExampleStubTest {
   }
 }
 ```
+
+## Сводка аннотаций Junit
+https://junit.org/junit5/docs/current/user-guide/
+
+| Назначение                                           | Junit4                                                                          | Junit5                                                                      |
+|------------------------------------------------------|---------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| Обозначение теста                                    | @Test                                                                           | @Test                                                                       |
+| Выполнять до всех методов тестов в текущем классе    | @BeforeClass                                                                    | @BeforeAll                                                                  |
+| Выполнять после всех методов тестов в текущем классе | @AfterClass                                                                     | @AfterAll                                                                   |
+| Выполнять перед запуском каждого метода              | @Before                                                                         | @BeforeEach                                                                 |
+| Выполнять после выполнения каждого метода            | @After                                                                          | @AfterEach                                                                  |
+| Задизейблить метод/класс                             | @Ignore                                                                         | @Disabled                                                                   |
+| Тестировать фабрику для динамических тестов          | NA                                                                              | @TestFactory                                                                |
+| Связанные тесты (последовательные)                   | NA                                                                              | @Nested                                                                     |
+| Добавить тег и фильтры                               | NA                                                                              | @Tag                                                                        |
+| Зарегистрировть кастомное расширение                 | NA                                                                              | @ExtendWith                                                                 |
+| Для активации аннотаций                              | @RunWith(SpringJUnit4ClassRunner.class)<br/> @RunWith(MockitoJunitRunner.class) | @ExtendWith(SpringExtension.class)<br/> @ExtendWith(MockitoExtension.class) |
+
+## Методы Junit
+https://junit.org/junit5/docs/current/user-guide/
+
+| Assertions                | Назначение                                                                                                       | Пример                                                                                                                                |
+|---------------------------|------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| assertEquals              | Поверхностное сравнение, объекты по ссылке                                                                       | `assertEquals(2, calculator.add(1, 1));`                                                                                              |
+| assertNotEquals           | Ожидаем что сравниваемые значения не равны                                                                       | `Assertions.assertNotEquals(3, Calculator.add(2, 2));`                                                                                |
+| assertAll                 | Ожидаем что выполнятся все. Если что-то выполнится с ошибкой, то ошибки объединяются                             | `assertAll("person",  () -> assertEquals("Jane", person.getFirstName()), () -> assertEquals("Doe", person.getLastName()))`            |
+| assertTrue                | Ожидаем результат true                                                                                           | `assertTrue('a' < 'b', () -> "Assertion messages can be lazily evaluated -- to avoid constructing complex messages unnecessarily.");` |
+| assertFalse               | Ожидаем результат false                                                                                          | `Assertions.assertFalse(falseBool);`                                                                                                  |
+| assertNull                | Ожидаем получить null                                                                                            | `Assertions.assertNull(nullString);`                                                                                                  |
+| assertNotNull             | Ожидаем любое не null значение                                                                                   | `assertNotNull(lastName);`                                                                                                            |
+| assertThrows              | Ожидаем ошибку в ходе выполнения                                                                                 | `assertThrows(ArithmeticException.class, () -> calculator.divide(1, 0));`                                                             |
+| assertTimeout             | Для тестирования долговыполняющихся задач. Если задача не будет выполнена в указанный промежуток, то тест упадет | `Assertions.assertTimeout(Duration.ofMinutes(1), () -> {return "result";});`                                                          |
+| assertTimeoutPreemptively | Отличается от `assertTimeout` тем, что выполнение `Executable` и `ThrowingSupplier` будет прервано               |                                                                                                                                       |
+| assertArrayEquals         | Ожидаем что массивы будут равны                                                                                  | `Assertions.assertArrayEquals(new int[]{1,2,3}, new int[]{1,2,3}, "Array Equal Test");`                                               |
+| assertIterableEquals      | Ожидаем что ожидаемые и фактические итерации полностью равны "Глубокое сравнение"                                | `Assertions.assertIterableEquals(listOne, listTwo);`                                                                                  |
+| assertLinesMatch          | Сравниваем список строк                                                                                          |                                                                                                                                       |
+| assertSame                | Для сравнение объектов, ожидаем что объекты будут равны                                                          | `Assertions.assertSame(originalObject, cloneObject);`                                                                                 |
+| assertNotSame             | Ожидаем что сравниваемые объекты не равны                                                                        | `Assertions.assertNotSame(originalObject, otherObject);`                                                                              |
+
+
+# Mockito
+
++ [Mocking services](#mocking-services)
++ [Рефакторинг используя аннотации](#рефакторинг-используя-аннотации)
++ [Проверка нескольких вариантов в тесте](#проверка-нескольких-вариантов-в-тесте)
++ [Spy](#spy)
++ [Тестирование контроллеров](#тестирование-контроллеров)
++ [Добавляем ожидаемые события](#добавляем-ожидаемые-события)
++ [Тестируем эндпоинт, который возвращает объект](#тестируем-эндпоинт-который-возвращает-объект)
++ [Тестирование бизнес сервиса](#тестирование-бизнес-сервиса)
++ [Тестирования даты с db](#тестирования-даты-с-db)
++ [Тестируем Сервис](#тестируем-сервис)
 
 ## Mocking services
 1. Используем статический метод `mock` для создания класса реализующего интерфейс `CalculateService`
@@ -174,23 +235,6 @@ public class SampleList {
 }
 ```
 
-## Сводка аннотаций Junit
-https://junit.org/junit5/docs/current/user-guide/
-
-| Назначение                                           | Junit4                                                                          | Junit5                                                                      |
-|------------------------------------------------------|---------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
-| Обозначение теста                                    | @Test                                                                           | @Test                                                                       |
-| Выполнять до всех методов тестов в текущем классе    | @BeforeClass                                                                    | @BeforeAll                                                                  |
-| Выполнять после всех методов тестов в текущем классе | @AfterClass                                                                     | @AfterAll                                                                   |
-| Выполнять перед запуском каждого метода              | @Before                                                                         | @BeforeEach                                                                 |
-| Выполнять после выполнения каждого метода            | @After                                                                          | @AfterEach                                                                  |
-| Задизейблить метод/класс                             | @Ignore                                                                         | @Disabled                                                                   |
-| Тестировать фабрику для динамических тестов          | NA                                                                              | @TestFactory                                                                |
-| Связанные тесты (последовательные)                   | NA                                                                              | @Nested                                                                     |
-| Добавить тег и фильтры                               | NA                                                                              | @Tag                                                                        |
-| Зарегистрировть кастомное расширение                 | NA                                                                              | @ExtendWith                                                                 |
-| Для активации аннотаций                              | @RunWith(SpringJUnit4ClassRunner.class)<br/> @RunWith(MockitoJunitRunner.class) | @ExtendWith(SpringExtension.class)<br/> @ExtendWith(MockitoExtension.class) |
-
 ## Spy
 - Мок создает голую копию класса
 - Spy оборачивает уже имеющийся инстанс класса
@@ -207,27 +251,6 @@ public void whenSpyingOnList () {
  assetEquals(2, spyList.size());
 }
 ```
-
-## Методы Junit
-https://junit.org/junit5/docs/current/user-guide/
-
-| Assertions                | Назначение                                                                                                       | Пример                                                                                                                                |
-|---------------------------|------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
-| assertEquals              | Поверхностное сравнение, объекты по ссылке                                                                       | `assertEquals(2, calculator.add(1, 1));`                                                                                              |
-| assertNotEquals           | Ожидаем что сравниваемые значения не равны                                                                       | `Assertions.assertNotEquals(3, Calculator.add(2, 2));`                                                                                |
-| assertAll                 | Ожидаем что выполнятся все. Если что-то выполнится с ошибкой, то ошибки объединяются                             | `assertAll("person",  () -> assertEquals("Jane", person.getFirstName()), () -> assertEquals("Doe", person.getLastName()))`            |
-| assertTrue                | Ожидаем результат true                                                                                           | `assertTrue('a' < 'b', () -> "Assertion messages can be lazily evaluated -- to avoid constructing complex messages unnecessarily.");` |
-| assertFalse               | Ожидаем результат false                                                                                          | `Assertions.assertFalse(falseBool);`                                                                                                  |
-| assertNull                | Ожидаем получить null                                                                                            | `Assertions.assertNull(nullString);`                                                                                                  |
-| assertNotNull             | Ожидаем любое не null значение                                                                                   | `assertNotNull(lastName);`                                                                                                            |
-| assertThrows              | Ожидаем ошибку в ходе выполнения                                                                                 | `assertThrows(ArithmeticException.class, () -> calculator.divide(1, 0));`                                                             |
-| assertTimeout             | Для тестирования долговыполняющихся задач. Если задача не будет выполнена в указанный промежуток, то тест упадет | `Assertions.assertTimeout(Duration.ofMinutes(1), () -> {return "result";});`                                                          |
-| assertTimeoutPreemptively | Отличается от `assertTimeout` тем, что выполнение `Executable` и `ThrowingSupplier` будет прервано               |                                                                                                                                       |
-| assertArrayEquals         | Ожидаем что массивы будут равны                                                                                  | `Assertions.assertArrayEquals(new int[]{1,2,3}, new int[]{1,2,3}, "Array Equal Test");`                                               |
-| assertIterableEquals      | Ожидаем что ожидаемые и фактические итерации полностью равны "Глубокое сравнение"                                | `Assertions.assertIterableEquals(listOne, listTwo);`                                                                                  |
-| assertLinesMatch          | Сравниваем список строк                                                                                          |                                                                                                                                       |
-| assertSame                | Для сравнение объектов, ожидаем что объекты будут равны                                                          | `Assertions.assertSame(originalObject, cloneObject);`                                                                                 |
-| assertNotSame             | Ожидаем что сравниваемые объекты не равны                                                                        | `Assertions.assertNotSame(originalObject, otherObject);`                                                                              |
 
 ## Тестирование контроллеров
 1. Создаем контроллер, который будет возвращать строку
