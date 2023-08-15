@@ -11,8 +11,9 @@
 <hibernate-configuration>
   <session-factory>
 
-    <property name="connection.url">jdbc:postgresql://localhost:5432/postgres</property> <!-- BD Mane -->
+    <property name="connection.url">jdbc:postgresql://localhost:5432/for_test</property> <!-- BD Mane -->
     <property name="connection.driver_class">org.postgresql.Driver</property> <!-- DB Driver -->
+    <property name="connection.default_schema">hibernate</property>
     <property name="connection.username">postgres</property> <!-- DB User -->
     <property name="connection.password">123321</property> <!-- DB Password -->
 
@@ -25,9 +26,6 @@
     <property name="hibernate.current_session_context_class">
       org.hibernate.context.internal.ThreadLocalSessionContext
     </property>
-
-    <!-- Mapping with model class containing annotations -->
-    <mapping class="com.example.entity.Student"/>
 
   </session-factory>
 </hibernate-configuration>
